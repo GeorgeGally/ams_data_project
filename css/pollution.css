@@ -1,0 +1,47 @@
+
+  body {
+    font-family: helvetica;
+    background: #efefef;
+    padding: 0px;
+  }
+  canvas, #canvas1, #canvas2 {
+  overflow: hidden;
+  left: 10px !important;
+  top: 10px !important;
+}
+
+  .Aligner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 20em;
+  }
+  .Aligner-item {
+    max-width: 50%;
+
+  }
+
+  .Aligner-item--top {
+    align-self: flex-start;
+  }
+
+  .Aligner-item {
+    align-self: flex-end;
+  }
+
+    #container {
+      width: 100%;
+      height: 100%;
+      z-index: 999;
+      position: absolute;
+      left: 0;
+      top: 0
+    }
+
+    .header {
+      color: #fff;
+      font-size: 23px;
+      line-height: 1.1em
+    }
+
+    .hidden { display: none; }

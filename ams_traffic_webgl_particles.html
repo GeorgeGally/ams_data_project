@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>three.js webgl - particles</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<script src="../js/three.min.js"></script>
+	<script src="../js/creative_coding.js"></script>
+	<script language="javascript" src="js/particle_engine.js"></script>
+	<!-- <script language="javascript" src="../js/perlin.js"></script> -->
+	<script language="javascript" src="../js/perlin_noise.js"></script>
+	<script language="javascript" src="../js/vector.js"></script>
+	<script language="javascript" src="../js/threejs/controls/OrbitControls.js"></script>
+	<script src="../js/dat.gui.min.js"></script>
+	<script language="javascript" src="js/d3.js"></script>
+</head>
+
+<body>
+
+
+
+
+	<script>
+		var engine = new particleEngine();
+		engine.delete(0);
+		var url = 'data/ams_traffic_fatalaties.csv';
+
+		var min_max;
+		var data = [];
+
+		//noise.seed(0.5);
+		var container;
+		var camera, scene, renderer, particles, geometry, materials, color, size;
+
+		var controls = {
+			x_speed: 10,
+			y_speed: 20,
+			ht: 200
+		}
+
+		var w = window.innerWidth;
+		var h = window.innerHeight;
+
+		var windowHalfX = window.innerWidth / 2;
+		var windowHalfY = window.innerHeight / 2;
+
+		var grid = new Grid(400, 200, w * 2, h * 2, -w / 2, -h / 2);
+		var particles;
+
+		function setup() {
+
+			load(url);
+			container = document.createElement('div');
+			document.body.appendChild(container);
+
+			camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
+			camera.position.z = 800;
+
+			scene = new THREE.Scene();
+			scene.fog = new THREE.FogExp2(0x000000, 0.0007);
+
+			geometry = new THREE.Geometry();
+
+			size = 2;
+
+			materials = new THREE.PointsMaterial({
+				size: size,
+				color: '#ffffff'
+			});
+
+			particles = new THREE.Points(geometry, materials);
+			particles.position.x = -w / 2;
+			particles.position.y = -h / 2;
+
+			scene.add(particles);
+
+			// for (i = 0; i < grid.length; i++) {
+			// 	var g = grid.grid[i]
+			// 	var vertex = new THREE.Vector3();
+			// 	vertex.x = g.x;
+			// 	vertex.y = g.y;
+			// 	vertex.z = 1;
+			//
+			// 	geometry.vertices.push(vertex);
+			//
+			// }
+			//
+			//addParticles();
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			container.appendChild(renderer.domElement);
+
+			orbitControls = new THREE.OrbitControls(camera);
+			//orbitControls.autoRotate = true;
+
+
+			window.addEventListener('resize', onWindowResize, false);
+
+		}
+
+
+
+
+		function draw() {
+
+			if (data[0]) {
+
+
+				if (frameNumber % 50) {
+					if (counter < data.length - 1) {
+						var x = Math.round(counter * w / (data.length - 1));
+						addParticles(data[counter], x);
+						counter = (counter + 1);
+						//console.log(x);
+					}
+				}
+
+
+				moveParticles();
+
+
+				particles.geometry.verticesNeedUpdate = true;
+				//orbitControls.update(frameCount / 100);
+				renderer.render(scene, camera);
+
+			}
+		}
+
+
+function addParticles(d, x){
+
+	// for (i = 0; i < h; i++) {
+	// 	var g = grid.grid[counter*i]
+	// 	var vertex = new THREE.Vector3();
+	// 	vertex.x = g.x;
+	// 	vertex.y = i;
+	// 	vertex.z = 1;
+	//
+	// 	geometry.vertices.push(vertex);
+	//
+	// }
+
+	//console.log('x', x);
+	var m = parseInt(d['ammt']);
+	for (var j = 0; j < m/4; j++) {
+
+		var g = grid.grid[counter]
+
+		var p = new THREE.Vector3();
+		p.x = randomInt(w);
+		//p.y = g.y;
+		p.y = randomInt(h);
+		//console.log('p.x', p.x);
+		p.z = 1;
+		p.start = new Vector(p.x, p.y, p.z);
+		p.old = new Vector(p.x, p.y, p.z);
+		p.speed = random(1, 12) / 100;
+		p.c = rgba(random(20, 205), 0, 0, 0.5);
+		if (chance(50)) engine.last.c = rgb(random(100, 255), 0.5);
+		p.vel = new Vector(1, 1, 1);
+		p.acc = new Vector(0, 0);
+		p.noisy = random(1, 8) / 10001;
+		p.dir = 1;
+		p.sz = 2;
+		geometry.vertices.push(p);
+	}
+
+	// particles.geometry.verticesNeedUpdate = true;
+	// console.log(particles.geometry.vertices[0]);
+	// console.log(particles.geometry.vertices[particles.geometry.vertices.length-1]);
+}
+
+
+function moveParticles(){
+	for (var i = 0; i < particles.geometry.vertices.length; i++) {
+		var p = particles.geometry.vertices[i];
+		moveParticle(p)
+		// var g = grid.grid[i];
+		//
+		// p.x = p.start.x + 100 * Math.sin(i / 15000 + frameCount / 50);
+		// p.y = p.start.y + 100 * Math.sin(i / 15000 + frameCount / 50);
+		// //p.z = 100* Math.sin(p.y + frameCount/1000);
+		// var ex = 0.5;
+		// // p.z = controls.ht * (
+		// // 	noise.perlin2(g.row / controls.x_speed, g.col / controls.y_speed + frameCount / 100) + noise.perlin2((g.row + frameCount / 10) / 50, g.col / 50 + frameCount / 100) * Math.sin(frameCount / 100));
+
+
+	}
+}
+
+
+
+function moveParticle(p) {
+
+	p.old.x = p.x;
+	p.old.y = p.y;
+	p.vel.x = p.dir * controls.x_speed * PerlinNoise.noise(p.x * .007, p.y * p.speed, p.noisy * .07) * Math.cos(0.7 * 22 / 7 * PerlinNoise.noise(p.x * .007, p.y * .007, p.noisy * .5));
+	p.vel.y = -controls.y_speed * PerlinNoise.noise(p.x * .0007, p.y * .0007, p.noisy * 19) * Math.sin(0.3 * 22 / 7 * PerlinNoise.noise(p.x * .007, p.y * .007, p.noisy * 5));
+
+	p.x += p.vel.x;
+	p.y += p.vel.y;
+
+	if (p.x < -w) {
+		p.x = w *2;
+	}
+	if (p.x > w *2) {
+		p.x = -w;
+	}
+
+	if (p.y < -h) {
+		p.y = h*2;
+	}
+
+	if (p.y > h*2) {
+		p.y = -h;
+	}
+
+	p.noisy += .007;
+}
+
+		/////////////////////////////
+
+
+
+		function load(url) {
+			//var vals = [];
+			d3.csv(url, function(error, d) {
+
+				if (error) console.log(error);
+				data = d;
+
+				minMax(data);
+				//ammt = getVal(data[0]);
+				//console.log(min_max);
+
+			});
+		}
+
+
+
+		function minMax(data) {
+			var min = 100000;
+			var max = -100000;
+			for (var i = 0; i < data.length; i++) {
+				var d = parseInt(data[i]['ammt']);
+
+				if (d > max) max = d;
+				if (d < min) min = d;
+
+			}
+
+			min_max = {
+				min: min,
+				max: max
+			};
+
+		}
+
+		function getVal(d) {
+			var m = parseInt(d['ammt']);
+			var n = map(m, min_max.min, min_max.max, 1, 500)
+
+			return n;
+		}
+
+		gui = new dat.GUI();
+		gui.add(controls, 'x_speed', 0, 400).listen();
+		gui.add(controls, 'y_speed', 0, 400).listen();
+		gui.add(controls, 'ht', 1, 1000).listen();
+
+		function onWindowResize() {
+
+			windowHalfX = window.innerWidth / 2;
+			windowHalfY = window.innerHeight / 2;
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+
+		}
+
+		function onDocumentMouseMove(event) {
+
+			mouseX = event.clientX - windowHalfX;
+			mouseY = event.clientY - windowHalfY;
+
+		}
+	</script>
+</body>
+
+</html>

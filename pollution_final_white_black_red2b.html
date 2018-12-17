@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+<title>Creative Coding Yea!</title>
+
+<head>
+  <meta charset="utf-8">
+
+  <script language="javascript" src="js/creative_coding.js"></script>
+  <script language="javascript" src="js/canvas.js"></script>
+  <script language="javascript" src="js/vector.js"></script>
+
+  <script language="javascript" src="js/d3.js"></script>
+  <script language="javascript" src="js/jquery-1.10.1.min.js"></script>
+
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" />
+  <link rel="stylesheet" href="css/style.css" type="text/css" media="screen" />
+  <link rel="stylesheet" href="css/pollution.css" type="text/css" media="screen" />
+
+
+</head>
+
+<body>
+
+  <script>
+    var ctx = createCanvas("canvas1");
+    var ctx2 = createCanvas("canvas2");
+    frameRate = 60;
+    var DEVICE_SCALE = 1.2;
+
+    var url = '../../data/ams_pm2.5_1_year_day_max.csv';
+
+    var particles = [];
+    var totals = [];
+    var particles_this_year = [];
+    var data = [];
+
+    var max_value, min_value;
+    var temp_particle = [];
+    var min, max, min_max;
+
+    let last_trigger = frameCount;
+
+    var speed = 128;
+    var offset_shift = 160;
+    var my_sticky = 200;
+
+    let current_year = 2013;
+
+    var years = [];
+    for (var i = 2013; i <= 2016; i++) {
+      years.push(i);
+    }
+
+
+    function setup() {
+      setScreen();
+      ctx.background(0);
+      load(url);
+    };
+
+    function draw() {
+
+      if (frameCount % 60 == 0) ctx.background(0, 0.01);
+      ctx2.clear();
+      drawParticles();
+      haveWeReachedTheBottom() ? nextYear() : 0;
+
+    }
+
+    function update(p) {
+      p.old_pos.y = p.pos.y;
+      if (!p.bottom) p.pos.y = Y(p.offset, speed);
+      // var r = p.sz / 2 + p.radius
+      if (!p.angle_off) {
+        var r = p.sz * Math.sin((p.me + frameCount) / 100) + 30;
+        var old_angle = p.angle;
+        p.angle += radians(p.rotation_speed);
+        var ghost_angle = p.angle - old_angle / 2;
+        if (p.angle > radians(360)) p.angle = 0;
+
+        p.ghost_orbit.x = p.pos.x + Math.cos(p.angle) * r;
+        p.ghost_orbit.y = p.pos.y + Math.sin(p.angle) * r;
+        p.orbit.x = p.pos.x + Math.cos(p.angle) * r;
+        p.orbit.y = p.pos.y + Math.sin(p.angle) * r;
+      }
+    }
+
+
+
+
+    function drawParticles() {
+      for (var i = 0; i < particles_this_year.length; i++) {
+        var p = particles_this_year[i];
+        update(p);
+        drawArm(p);
+        drawOrbits(p);
+      }
+    }
+
+    function nextYear() {
+      current_year++;
+      last_trigger = frameCount = 0;
+      console.log('current_year', current_year);
+      var old_particles = particles_this_year;
+      particles_this_year = getThisYearsParticles();
+      for (var i = 0; i < particles_this_year.length; i++) {
+        var p = particles_this_year[i];
+        var p2 = old_particles[i];
+        p.angle = p2.angle;
+        //p.pos.y = Y(p.offset, speed);
+        update(p);
+      }
+
+    }
+
+    // have thy all rreached the reached_bottom
+    // have they rotated 360
+
+
+    function haveWeReachedTheBottom() {
+      var bottom = true;
+      if (particles[0]) {
+        //console.log(particles_this_year.length);
+        for (var i = 0; i < particles_this_year.length; i++) {
+          var p = particles_this_year[i];
+
+          if (p.pos.y > h / 2 + offset_shift + p.offset - 10 && frameCount > last_trigger + 250) {
+            p.bottom = true;
+          }
+
+          if (p.bottom && !p.angle_off && (p.angle < radians(120) || p.angle > radians(350))) {
+            p.angle_off = true;
+          } else {
+
+          }
+          if (!p.angle_off) bottom = false;
+
+        }
+        if (bottom == true) return true;
+
+      }
+
+    }
+
+
+
+    //////////////////////////////////// DRAWING ////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+
+
+    function drawArm(p) {
+
+      ctx2.strokeStyle = rgba(255);
+      ctx2.line(p.pos.x, p.pos.y, p.orbit.x, p.orbit.y);
+      ctx2.fillMe(255);
+      ctx2.fillEllipse(p.pos.x, p.pos.y, 3, 3);
+      ctx.fillMe('#0095a8');
+      ctx.fillMe('#ee0000');
+      //ctx.fillMe(0);
+      ctx.fillEllipse(p.pos.x, p.pos.y, 8, 8);
+    }
+
+    function drawOrbits(p) {
+
+      ctx.lineWidth = 1;
+      ctx2.lineWidth = 1;
+
+      ctx.fillStyle = rgba(0, 0.1);
+      ctx.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
+      //ctx.fillCircle(p.ghost_orbit.x, p.ghost_orbit.y, p.sz, p.sz);
+      ctx.strokeStyle = rgba(255, 0.2);
+      ctx.strokeCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
+
+      ctx2.strokeStyle = rgba(255, 0.3);
+      ctx2.strokeCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
+
+      ctx2.fillMe('#ee0000');
+      //ctx2.fillMe('#0095a8');
+      ctx2.fillMe(255);
+      ctx2.fillCircle(p.orbit.x, p.orbit.y, 4, 4);
+
+    }
+
+
+    //////////////////////////////////// ADD PARTICLES ///////////////////////
+    /////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+
+
+
+    function getThisYearsParticles() {
+      return particles.filter(p => p.year == current_year);
+    }
+
+
+    function addParticles(data) {
+
+      for (var i = 0; i < data.length; i++) {
+        var d = data[i];
+
+        var x = Math.round(sticky(map(d.Longitude, min_max.min_lng, min_max.max_lng, 90, w - 100), my_sticky));
+
+        var ii = checkIfAlreadySameXValue(x, d.Year);
+        var val = parseFloat(d.AQValue);
+        if (ii != undefined) {
+          temp_particle[ii].sz += val;
+        } else {
+          temp_particle.push({
+            x: x,
+            sz: val,
+            target: val,
+            year: d.Year,
+            offset: 0
+          });
+        }
+      }
+
+
+      for (var i = 0; i < temp_particle.length; i++) {
+        var p = temp_particle[i];
+        addParticle(p, i);
+      }
+
+
+      min_value = Math.min.apply(Math, particles.map(function(p) {
+        return p.sz;
+      }));
+
+      max_value = Math.max.apply(Math, particles.map(function(p) {
+        return p.sz;
+      }));
+
+      particles.forEach(p => {
+        p.sz = Math.round(map(p.sz, min_value, max_value, 80, 140)) / DEVICE_SCALE;
+        p.rotation_speed = 3.3 - map(p.sz, min_value, max_value, 1.4, 2.6)/5;
+        p.offset = p.sz * 2.4;
+      });
+
+      console.log('current_year', current_year);
+      particles_this_year = getThisYearsParticles();
+      console.log(particles_this_year);
+    }
+
+
+    function addParticle(p, i) {
+      //console.log('p.sz', p.sz);
+      var particle = {
+        pos: {
+          x: p.x + 50,
+          y: Y(p.offset, speed)
+        },
+        ghost_pos: {
+          x: p.x + 50,
+          y: Y(p.offset, speed)
+        },
+        old_pos: {
+          x: p.x + 50,
+          y: Y(p.offset, speed)
+        },
+        sz: p.sz,
+        radius: 80 / DEVICE_SCALE,
+        orbit: {
+          x: 1,
+          y: 1
+        },
+        ghost_orbit: {
+          x: 1,
+          y: 1
+        },
+        offset: p.offset,
+        target: p.target,
+        angle: 0,
+        //angle2: random(360),
+        rotation_speed: 1,
+        speed: speed,
+        dir: -1,
+        year: p.year,
+        me: i,
+        bottom: false,
+        angle_off: false
+      };
+      //console.log('particle.sz', particle.sz);
+      particles.push(particle);
+    }
+
+
+
+
+    // UTILS ////////////////////////////
+
+    function afterLoad() {
+      fixData(data);
+      min_max = minMaxLatLng(data);
+      addParticles(data)
+      getTotals(data);
+      last_trigger = 0;
+      frameCount = 0;
+      ctx.background(0);
+    }
+
+
+    function getTotals(data) {
+      for (var i = 0; i < years.length; i++) {
+        var year_data = data.filter(p => p.Year == years[i]);
+        var yr_total = 0;
+        for (var j = 0; j < year_data.length; j++) {
+          var d = year_data[j];
+          yr_total += d.AQValue;
+        }
+        totals.push(yr_total);
+      }
+
+    }
+
+    function setScreen() {
+
+      if (window.location.hash) {
+
+        var screen_name = window.location.hash.substr(1).toLowerCase();
+        console.log('screen: ', screen_name);
+        if (screen_name == "central") {
+          //widescreen - 2112x608
+          resizeCanvas(ctx, 2112, 608);
+          resizeCanvas(ctx2, 2112, 608);
+          my_sticky = 60;
+        } else if (screen_name == "leidseplein") {
+          // 1632x608
+          resizeCanvas(ctx, 1632, 608);
+          resizeCanvas(ctx2, 1632, 608);
+          my_sticky = 100;
+        } else if (screen_name == "wtc") {
+          // 768x384
+          resize(768, 384);
+          my_sticky = 100;
+        } else {
+          location.hash = "#default";
+          my_sticky = 50;
+          // normal
+
+        }
+      }
+    }
+
+
+    function fixData(data) {
+      for (var i = 0; i < data.length; i++) {
+        var d = data[i];
+        d.Year = parseInt(d.Year);
+        d.AQValue = parseInt(d.AQValue);
+      }
+    }
+
+    function checkIfAlreadySameXValue(x, year) {
+      for (var i = 0; i < temp_particle.length; i++) {
+        var p = temp_particle[i];
+        if (p.x == x && p.year == year) {
+          //console.log("same");
+          return i;
+        }
+      }
+    }
+
+
+    function resizeCanvas(_ctx, _w, _h) {
+      console.log(w);
+      var c = document.getElementsByTagName('canvas');
+      width = w = _w / DEVICE_SCALE;
+      height = h = _h / DEVICE_SCALE;
+
+      for (var i = 0; i < c.length; i++) {
+        c[i].width = width;
+        c[i].height = height;
+      }
+      _ctx.width = w;
+      _ctx.height = h;
+      _ctx.canvas.width = w;
+      _ctx.canvas.height = h;
+      console.log("resize: " + w + ":" + h);
+      $('#canvas1').css({
+        width: w + "px"
+      });
+      $('#canvas1').css({
+        height: h + "px"
+      });
+      $('#canvas2').css({
+        width: w + "px"
+      });
+      $('#canvas2').css({
+        height: h + "px"
+      });
+    }
+
+
+    function minMaxSz() {
+
+      min = 10000;
+      max = -10000;
+
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        if (p.sz > max) max = p.sz;
+        if (p.sz < min) min = p.sz;
+      }
+
+    }
+
+    function minMaxLatLng(data) {
+
+      var min_lat = 10000;
+      var min_lng = 10000;
+      var max_lat = -10000;
+      var max_lng = -10000;
+
+
+      for (var i = 0; i < data.length; i++) {
+        var d = data[i];
+        if (d.Latitude > max_lat) max_lat = parseFloat(d.Latitude);
+        if (d.Latitude < min_lat) min_lat = parseFloat(d.Latitude);
+        if (d.Longitude > max_lng) max_lng = parseFloat(d.Longitude);
+        if (d.Longitude < min_lng) min_lng = parseFloat(d.Longitude);
+      }
+      return {
+        min_lat: min_lat,
+        max_lat: max_lat,
+        min_lng: min_lng,
+        max_lng: max_lng
+      }
+    }
+
+    function load(url) {
+
+      d3.csv(url, function(error, d) {
+
+        if (error) console.log(error);
+        data = d;
+        afterLoad();
+      });
+    }
+
+    function Y(offset, speed) {
+      return h / 2 + offset_shift + Math.sin(radians(90) + frameCount / speed) * (offset);
+    }
+  </script>
+
+</body>
+
+</html>

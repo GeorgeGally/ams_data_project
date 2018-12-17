@@ -1,0 +1,283 @@
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF8">
+	<link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" />
+	<script src="js/jquery-1.10.1.min.js"></script>
+	<script language="javascript" src="../js/perlin_noise.js"></script>
+	<script src="js/creative_coding.js"></script>
+	  <script language="javascript" src="../js/vector.js"></script>
+	<script language="javascript" src="js/quicksettings.min.js"></script>
+
+	<script language="javascript" src="js/canvas.js"></script>
+	<script language="javascript" src="js/particle_engine.js"></script>
+	<script language="javascript" src="js/d3.js"></script>
+
+	<script language="javascript" src="js/Easing.js"></script>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script language="javascript" src="js/set_screen.js"></script>
+
+</head>
+
+<body>
+
+	<script type="text/javascript">
+	var ctx = createCanvas("canvas1");
+var ctx2 = createHiddenCanvas("canvas2");
+		var settings = false;
+		var min_sz = 0;
+		var max_sz = 600;
+		var max_outlines = 27;
+		var outline_sz = 4;
+		var colour_step = 10;
+		var blur_ammt = 15;
+		var offset = 9;
+		var resolutionScale = window.devicePixelRatio || 1;
+		//noise.seed(Math.random());
+		var years = [];
+		for (var i = 1950; i <= 2016; i++) {
+			years.push(i);
+		}
+
+		frameRate = 30;
+		var engine = new particleEngine();
+		engine.delete(0);
+
+
+
+
+		var loc, zoom, timeline, ease_speed;
+
+		var blue = rgb(0, 174, 239);
+		var orange = rgb(255, 69, 0);
+
+		var min_max;
+		var data = [];
+		var url = 'data/ams_traffic_fatalaties.csv';
+		var ammt = 0;
+		var year = 0;
+		let current_year = 0;
+		function setup() {
+			setScreen();
+			load(url);
+
+			if (settings) addQuickSettings();
+
+
+		};
+
+
+		function draw() {
+			if (data[0]) {
+
+				ctx.background(0, 0.3)
+
+
+				//engine.update();
+				drawParticles()
+				// ammt = tween(ammt, getVal(data[counter]), 4);
+				// ctx.fillEllipse(w / 2, h / 2, ammt);
+				if (frameNumber % 5) {
+					if (counter < data.length - 1) {
+						var x = counter * w/ (data.length-1);
+						addParticles(data[counter], x);
+						// if(data[counter].year)
+						counter = (counter + 1);
+				}
+
+			}
+				// if (counter > data.length - 1) {
+				// 	counter = 0;
+				// 	console.log('year ----------------');
+				// }
+			}
+
+		}
+
+
+		function addParticles(d, x){
+			//console.log('i', i);
+			var m = parseInt(d['ammt']);
+			for (var j = 0; j < m/3; j++) {
+				// engine.add(random(-100, 0), random(h), randomGrey());
+				engine.add(x + randomInt(-5, 5), randomInt(h), randomGrey(50, 240, 30));
+				//engine.last.speed = new Vector(0, randomInt(1, 5));
+				engine.last.speed = random(1,12)/1001;
+				engine.last.vel = new Vector(0, 0);
+				engine.last.acc = new Vector(0, 0);
+				engine.last.noisy = random(1,8)/10001;
+			}
+
+			//console.log(engine);
+		}
+
+
+		function drawParticles(){
+			for (var i = 0; i < engine.length; i++) {
+				var p = engine.particles[i];
+				//p.pos.y += p.speed.y;
+				moveParticle(p);
+				if(p.pos.y > h) p.pos.y = 0;
+				//console.log(p);
+				ctx.fillStyle = p.c;
+				ctx.fillRect(p.pos.x, p.pos.y, 2, 2);
+			}
+		}
+
+		var noisy = 0;
+		var fieldIntensity = 200000;
+		var noiseScale = 2000;
+
+		function moveParticle(p){
+		// 	p.vel.x = 5*noise.perlin3(200+p.pos.x*.007, 200+p.pos.y*.007, noisy*2)*Math.cos(4*Math.PI*noise.perlin3(p.pos.x*.003, p.pos.y*.003, noisy));
+		// //console.log(vel[i].x);
+		// p.vel.y = 10*noise.perlin3(p.pos.x*.007, p.pos.y*.007, noisy*2)*Math.sin(4*Math.PI*noise.perlin3(p.pos.x*.003, p.pos.y*.003, noisy));
+
+		p.old.x = p.pos.x;
+		p.old.y = p.pos.y;
+//ctx.lineWidth = p.l;
+
+//ctx.fillEllipse(p.pos.x, p.pos.y, 4, 4)
+p.vel.x = 30*PerlinNoise.noise(20+p.pos.x*.007, 50+p.pos.y*p.speed, p.noisy*.07)*Math.cos(0.7 * 22/7 * PerlinNoise.noise(p.pos.x*.007, p.pos.y*.007, p.noisy*.5));
+	p.vel.y = 30*PerlinNoise.noise(20+p.pos.x*.0007, 20+p.pos.y*.0007, p.noisy*19)*Math.sin(0.3 * 22/7 * PerlinNoise.noise(p.pos.x*.007, p.pos.y*.007, p.noisy*5));
+
+	p.pos.x += p.vel.x;
+	p.pos.y += p.vel.y;
+	ctx.strokeStyle = p.c;
+	ctx.line(p.pos.x, p.pos.y, p.old.x, p.old.y);
+
+		// p.angle = radians(noise.perlin2(p.pos.x / noiseScale, p.pos.y / noiseScale));
+		// 	p.angle2 = Math.sin(radians(noise.perlin2(i, p.angle * .8)));
+		// 	p.angle3 = noise.perlin2(p.angle2 * .40, p.angle2 * 3 * counter / 10) * fieldIntensity;
+		// 	p.pos.x += p.angle3 * 0.2;
+		// 	p.pos.y += p.angle3 * 0.2;
+
+		//for(var j = 0; j < num; j++) {
+		// 	if(j != i){
+		//		p.acc.x += (p.pos.x-pos[j].x)/dist(p.pos.x, p.pos.y, pos[j].x, pos[j].y)/Math.pow(5+dist(p.pos.x, p.pos.y, pos[j].x, pos[j].y),2)/200;
+		//		p.acc.y += (p.pos.y-pos[j].y)/dist(p.pos.x, p.pos.y, pos[j].x, pos[j].y)/Math.pow(5+dist(p.pos.x, p.pos.y, pos[j].x, pos[j].y),2)/20;
+			//}
+		 // vel[i].add(p.acc);
+		//}
+	// p.pos.add(vel[i]);
+	// p.pos.x += p.vel.x;
+	// p.pos.y += p.vel.y;
+
+	if(p.pos.x < 0){
+		p.pos.x = w;
+	}
+	if(p.pos.x > w){
+		p.pos.x = 0;
+	}
+
+	if(p.pos.y < 0){
+		p.pos.y = h;
+	}
+
+	if(p.pos.y > h){
+		p.pos.y = 0;
+	}
+	//p.acc.x = 0;
+	//p.acc.y = 0;
+//}
+noisy += .007;
+		}
+
+		function getVal(d) {
+			var m = parseInt(d['ammt']);
+			var n = map(m, min_max.min, min_max.max, 1, 500)
+
+			return n;
+		}
+
+
+
+
+
+		function load(url) {
+			//var vals = [];
+			d3.csv(url, function(error, d) {
+
+				if (error) console.log(error);
+				data = d;
+				// for (var i = 0; i < data.length; i++) {
+				// 	var d = data[i];
+				// 	var x = i * w/ (data.length-1);
+				// 	//console.log(d);
+				// 	addParticles(d, x);
+				// }
+
+
+				minMax(data);
+				ammt = getVal(data[0]);
+				console.log(min_max);
+
+			});
+		}
+
+
+
+		function minMax(data) {
+			var min = 100000;
+			var max = -100000;
+			for (var i = 0; i < data.length; i++) {
+				var d = parseInt(data[i]['ammt']);
+
+				if (d > max) max = d;
+				if (d < min) min = d;
+
+			}
+
+			min_max = {
+				min: min,
+				max: max
+			};
+
+		}
+
+
+
+		function addQuickSettings() {
+			var settings = QuickSettings.create(w - 200, 30, "Settings");
+			// // settings.addRange(title, min, max, value, step, callback);
+
+			settings.addRange("min_sz", 0, 100, min_sz, 1, function(value) {
+				min_sz = value;
+			});
+
+
+			settings.addRange("max_sz", 1, 2000, max_sz, 1, function(value) {
+				max_sz = value;
+			});
+
+
+			settings.addRange("max_outlines", 1, 100, max_outlines, 1, function(value) {
+				max_outlines = value;
+			});
+
+			settings.addRange("outline_sz", 1, 30, outline_sz, 0.1, function(value) {
+				outline_sz = value;
+			});
+
+			settings.addRange("blur_ammt", 1, 100, blur_ammt, 1, function(value) {
+				blur_ammt = value;
+			});
+
+			settings.addRange("offset", 1, 80, offset, 1, function(value) {
+				offset = value;
+			});
+			settings.addRange("zoom", 5, 16, zoom, 0.01, function(value) {
+				zoom = value;
+				gmap.setZoom(zoom);
+			});
+		}
+	</script>
+
+
+
+
+</body>
+
+</html>

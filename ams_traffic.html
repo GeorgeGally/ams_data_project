@@ -1,0 +1,417 @@
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF8">
+	<link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" />
+	<script src="js/jquery-1.10.1.min.js"></script>
+	<script src="js/creative_coding.js"></script>
+	<script language="javascript" src="js/quicksettings.min.js"></script>
+	<script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyDEKAnXP_v0EOZxJ5bv0K4UNqYFRM1JAj0&libraries=visualization"></script>
+
+	<script language="javascript" src="js/canvas.js"></script>
+	<script language="javascript" src="js/d3.js"></script>
+	<script src="js/CanvasLayer.js"></script>
+	<script src="js/map_styles.js"></script>
+	<script language="javascript" src="js/Easing.js"></script>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<style>
+			body {
+				overflow: hidden;
+			}
+
+			::-webkit-scrollbar {
+				display: none;
+			}
+
+			canvas {
+				pointer-events: none;
+				position: absolute;
+			}
+
+			#map {
+				width: calc(100% + 40px);
+				height: calc(100% + 30px);
+				overflow: hidden;
+			}
+		</style>
+	</head>
+
+	<body>
+
+
+		<div id="map"></div>
+
+		<script type="text/javascript">
+
+			var settings = false;
+			var min_sz = 0;
+			var max_sz = 600;
+			var max_outlines = 27;
+			var outline_sz = 4;
+			var colour_step = 10;
+			var blur_ammt = 15;
+			var offset = 9;
+
+			var ctx = createCanvas("c1");
+			var loc, zoom, timeline, ease_speed;
+
+			var blue = rgb(0, 174, 239);
+			var orange = rgb(255, 69, 0);
+
+			var min_max;
+			var data = [];
+			function setScreen() {
+
+				if (window.location.hash) {
+
+					var screen_name = window.location.hash.substr(1).toLowerCase();
+					console.log('screen: ', screen_name);
+					if (screen_name == "central") {
+						//widescreen - 2112x608
+						max_sz = 900;
+						max_outlines = 34;
+						zoom = 13;
+						loc = {
+							lat: 52.35670291661623,
+							lng: 4.920083598144505
+						}
+					} else if (screen_name == "leidseplein") {
+						// 1632x608
+						max_sz = 561;
+						max_outlines = 34;
+						outline_sz = 13.1;
+						zoom = 12.31;
+						loc = {
+							lat: 52.375272288035994,
+							lng: 4.923410265896533
+						}
+						timeline.wd = 280;
+						timeline.ht = 95;
+						timeline.padding = 5;
+						timeline.line_width = 4;
+						timeline.start_y = h - timeline.ht - 20;
+						timeline.graph_top = timeline.start_y + timeline.padding + 2;
+						timeline.graph_right = 0;
+						timeline.graph_bottom = timeline.start_y + timeline.ht - 35;
+						timeline.start_x = w - timeline.wd - 20;
+						timeline.txt_sz = 14;
+					} else if (screen_name == "wtc") {
+						// 768x384
+						timeline.wd = 240;
+						timeline.ht = 70;
+						timeline.txt_sz = 12;
+						timeline.txt_sz2 = 11;
+						timeline.line_width = 4;
+						timeline.padding = 4;
+						timeline.start_y = h - timeline.ht - 10;
+						timeline.graph_top = timeline.start_y + timeline.padding + 2;
+						timeline.graph_right = 0;
+						timeline.graph_bottom = timeline.start_y + timeline.ht - 30;
+						timeline.start_x = w - timeline.wd - 10;
+						max_sz = 380;
+						zoom = 11.65;
+						loc = {
+							lat: 52.3542333529132,
+							lng: 4.9040693866449026
+						}
+					} else {
+						location.hash = "#default";
+						// normal
+						max_sz = 600;
+						zoom = 13;
+						loc = {
+							lat: 52.3745653,
+							lng: 4.885408
+						}
+					}
+				}
+			}
+
+
+			var resolutionScale = window.devicePixelRatio || 1;
+
+			var years = [];
+			for (var i = 1950; i <= 2016; i++) {
+				years.push(i);
+			}
+
+			frameRate = 60;
+
+			var url = 'data/ams_traffic_fatalaties.csv';
+
+			var ammt = 0;
+			function draw() {
+				if (data[0]) {
+					//timeline.update();
+					ctx.background(0)
+
+					ctx.fillStyle = "red";
+
+
+					ammt = tween(ammt, getVal(data[counter]), 4);
+					ctx.fillEllipse(w/2, h/2, ammt);
+					if(frameNumber % 120) counter = (counter + 1);
+					if(counter > data.length - 1) {
+						counter = 0;
+						console.log('year ----------------');
+					}
+			}
+
+}
+
+
+function getVal(d){
+	var m = parseInt(d['ammt']);
+	var n = map(m, min_max.min, min_max.max, 1, 500)
+
+	return n;
+}
+
+
+			function setup() {
+
+
+					load(url);
+
+					if (settings) addQuickSettings();
+
+
+			};
+
+
+			function load(url) {
+				//var vals = [];
+				d3.csv(url, function(error, d) {
+
+					if (error) console.log(error);
+					data = d;
+					for (var i = 0; i < data.length; i++) {
+						var d = data[i];
+						//console.log(d);
+
+					}
+
+
+					minMax(data);
+					ammt = getVal(data[0]);
+					console.log(min_max);
+
+				});
+			}
+
+
+			function getLocs(d, t, totals) {
+				// console.log(totals);
+				//for (var j = 0; j < totals; j++) {
+				var loc = new google.maps.LatLng(d.LATITUDE, d.LONGITUDE);
+				//heatmapData.push(loc);
+				var px = fromLatLngToPixel(loc);
+				//console.log(px);
+				ctx.fillStyle = rgb(255);
+				if (t == day_start || t == "any") {
+					ctx.fillStyle = rgb(0);
+				} else {
+					ctx.fillStyle = rgb(255);
+				}
+				ctx.LfillEllipse(px.x, px.y, 3 * totals, 3 * totals);
+				//}
+
+			}
+
+
+
+
+			function minMax(data) {
+				var min = 100000;
+				var max = -100000;
+				for (var i = 0; i < data.length; i++) {
+					var d = parseInt(data[i]['ammt']);
+
+						if (d > max) max= d;
+						if (d < min) min = d;
+
+				}
+
+				min_max = {
+					min: min,
+					max: max
+				};
+
+			}
+
+
+
+			function Timeline(labels) {
+
+				this.ht = 140;
+				this.wd = 380;
+				this.padding = 10;
+
+				this.txt_sz = 18;
+				this.txt_sz2 = 15;
+				this.graph_right = this.padding;
+				this.start_x = w - this.wd - this.padding * 2 - this.graph_right;
+				this.start_y = h - this.padding * 2 - this.ht;
+				var x = xx = this.start_x + this.padding;
+				this.graph_top = this.start_y + this.padding;
+				this.graph_bottom = this.start_y + this.ht - 52;
+
+				var timeline_ctx = createCanvas('timeline');
+				var old_total = 0;
+				timeline_ctx.canvas.style.zIndex = 999;
+				timeline_ctx.canvas.style.pointerEvents = 'none';
+
+
+				this.counter = 0;
+				this.updated;
+				this.speed = 1;
+				this.line_width = 6;
+
+				this.update = function() {
+
+					this.updated = false;
+					if (frameCount % this.speed == 0) {
+
+						this.counter++;
+						xx = map(this.counter, 0, labels.length - 1, this.start_x + 20, this.start_x + this.wd - this.padding);
+						this.updated = true;
+						//max_outlines = randomInt(10, 16);
+						// max_outlines += 0.5;
+
+						if (this.counter >= labels.length) {
+							this.counter = 0;
+							frameCount = 0;
+							x = xx = this.start_x + this.padding;
+						}
+
+
+						for (var i = blobs.length - 1; i >= 0; i--) {
+							var b = blobs[i];
+							setMidpointSize(i, timeline.counter);
+							//hitCheck(b, i);
+						}
+					}
+
+					this.draw();
+				}
+
+				this.draw = function() {
+					timeline_ctx.clearRect(0, 0, w, h);
+					timeline_ctx.lineWidth = 1;
+
+					timeline_ctx.shadowColor = rgba(0, 0.3);
+					timeline_ctx.shadowBlur = 8;
+					timeline_ctx.shadowOffsetX = 0;
+					timeline_ctx.shadowOffsetY = 0;
+
+					timeline_ctx.fillStyle = rgba(25, 0.9);
+					timeline_ctx.strokeStyle = rgba(0);
+					timeline_ctx.fillRect(this.start_x, this.start_y, this.wd, this.ht);
+					//timeline_ctx.strokeRect(this.start_x, this.start_y, this.wd, this.ht);
+
+					timeline_ctx.shadowBlur = 0;
+					timeline_ctx.shadowOffsetX = 0;
+					timeline_ctx.shadowOffsetY = 0;
+
+					this.lineGraph();
+
+					timeline_ctx.fillStyle = rgb(220);
+
+					timeline_ctx.font = this.txt_sz + "px Roboto";
+
+					timeline_ctx.textAlign = "left";
+					timeline_ctx.textAlign = "left";
+
+					timeline_ctx.fillText("Amsterdam population by suburb", this.start_x + this.padding, this.graph_bottom + this.txt_sz);
+
+					var num = totals[timeline.counter].toLocaleString().replace(',', ' ');
+					timeline_ctx.fillText(labels[this.counter] + ": " + num + " residents", this.start_x + this.padding, this.graph_bottom + this.txt_sz + this.txt_sz);
+
+					timeline_ctx.fillStyle = rgb(255);
+					timeline_ctx.shadowColor = rgba(0, 0.3);
+					timeline_ctx.shadowBlur = 2;
+					timeline_ctx.shadowOffsetY = 2;
+					timeline_ctx.font = this.txt_sz2 + "px Roboto";
+					timeline_ctx.fillText("Data sculpture by George Gally | radarboy.com", 10, h - 10);
+					timeline_ctx.shadowBlur = 0;
+					timeline_ctx.shadowOffsetY = 0;
+				}
+
+
+				this.lineGraph = function() {
+
+					timeline_ctx.lineWidth = this.line_width;
+
+					for (var i = 0; i < totals.length; i++) {
+						var d = totals[i];
+						var x = map(i, 0, totals.length, this.start_x + this.padding + this.padding / 2, this.start_x + this.wd - this.padding);
+						timeline_ctx.strokeStyle = rgb(60);
+						timeline_ctx.line(x, this.graph_bottom, x, this.graph_top);
+						if (i == timeline.counter) {
+							timeline_ctx.strokeStyle = blue;
+
+							// if population decreases make orange
+							if (old_total > d) timeline_ctx.strokeStyle = orange;
+						} else {
+							timeline_ctx.strokeStyle = rgb(100);
+						}
+						//console.log('timeline.counter', timeline.counter);
+						var y = map(d, 550000, 1000000, this.graph_bottom, this.graph_top);
+						timeline_ctx.line(x, this.graph_bottom, x, y);
+
+						old_total = d;
+
+					}
+				}
+
+
+			}
+
+
+			function addQuickSettings() {
+				var settings = QuickSettings.create(w - 200, 30, "Settings");
+				// // settings.addRange(title, min, max, value, step, callback);
+
+				settings.addRange("min_sz", 0, 100, min_sz, 1, function(value) {
+					min_sz = value;
+				});
+
+
+				settings.addRange("max_sz", 1, 2000, max_sz, 1, function(value) {
+					max_sz = value;
+				});
+
+
+				settings.addRange("max_outlines", 1, 100, max_outlines, 1, function(value) {
+					max_outlines = value;
+				});
+
+				settings.addRange("outline_sz", 1, 30, outline_sz, 0.1, function(value) {
+					outline_sz = value;
+				});
+
+				settings.addRange("blur_ammt", 1, 100, blur_ammt, 1, function(value) {
+					blur_ammt = value;
+				});
+
+				settings.addRange("offset", 1, 80, offset, 1, function(value) {
+					offset = value;
+				});
+				settings.addRange("zoom", 5, 16, zoom, 0.01, function(value) {
+					zoom = value;
+					gmap.setZoom(zoom);
+				});
+			}
+
+
+	</script>
+
+
+
+
+</body>
+
+</html>

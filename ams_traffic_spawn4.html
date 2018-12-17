@@ -1,0 +1,215 @@
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF8">
+	<link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" />
+	<script src="js/jquery-1.10.1.min.js"></script>
+	<script language="javascript" src="../js/perlin_noise.js"></script>
+	<script src="js/creative_coding.js"></script>
+	<script language="javascript" src="../js/vector.js"></script>
+	<script language="javascript" src="js/quicksettings.min.js"></script>
+
+	<script language="javascript" src="js/canvas.js"></script>
+	<script language="javascript" src="js/particle_engine.js"></script>
+	<script language="javascript" src="js/d3.js"></script>
+
+	<script language="javascript" src="js/Easing.js"></script>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+</head>
+
+<body>
+
+	<script type="text/javascript">
+		var ctx = createCanvas("c1");
+		var ctx2 = createHiddenCanvas("c2");
+		var settings = true;
+		var min_sz = 0;
+		var max_sz = 600;
+
+		var noisy = 0;
+		var fieldIntensity = 200000;
+		var noiseScale = 2000;
+
+		var loaded = false;
+		var data = [];
+		var url = 'data/ams_traffic_fatalaties.csv';
+		var url = 'data/ams_traffic_fatalaties_20_year.csv';
+
+		let speedx = 10;
+		let speedy = 50;
+		let spacing = 5;
+		let height_offset = 500;
+		let sz = 8;
+		let gap = 3;
+
+
+		function setup() {
+			frameRate = 60;
+			if (settings) addQuickSettings();
+
+			counter = 0;
+			ctx.background(0);
+			ctx.strokeWeight = 30;
+			load(url);
+
+		};
+
+
+		function draw() {
+			if (loaded && counter < data.length-1) {
+
+				if (parseInt(data[counter]['ammt']) < 0 ) {
+				//if (counter == 0) {
+
+					//if (frameNumber % 2) {
+					console.log(data[counter]);
+					counter = (counter + 1);
+					//}
+
+				} else {
+					var x = randomSticky(w, sz);
+					//var x = Math.round(counter * spacing);
+					addParticles(speedy, x);
+					data[counter]['ammt'] = parseInt(data[counter]['ammt']) - speedy;
+					// counter = (counter + 1) % (data.length - 1);
+
+
+				}
+
+			}
+			ctx2.background(0, 0.1);
+			drawParticles();
+			ctx.drawImage(ctx2.canvas, 0, 0, w, h);
+
+		}
+
+
+		function addParticles(d, x) {
+			//console.log('addParticles' );
+			//var m = parseInt(d['ammt']) / scale_back;
+
+			for (var j = 0; j < d; j++) {
+				addParticle(x, - height_offset, rgba(random(10, 225), 0, 0, 0.5));
+			}
+			//console.log(particles.length);
+		}
+
+
+		function drawParticles() {
+
+			for (var i = particles.length-1; i >= 0 ; i--) {
+				var p = particles[i];
+				//p.pos.y += p.speed.y;
+				moveParticle(p, i);
+
+				ctx2.fillStyle = p.c;
+				p.sz -= 0.01;
+				//ctx2.strokeStyle = p.c;
+				//ctx2.line(p.old.x, p.old.y, p.pos.x, p.pos.y);
+				//ctx2.fillRect(p.pos.x, p.pos.y, spacing - gap, sz);
+				ctx2.LfillEllipse(p.pos.x, p.pos.y, p.sz);
+				//ctx2.LstrokeEllipse(p.pos.x, p.pos.y, p.sz, p.sz);
+			}
+		}
+
+
+
+		function moveParticle(p, i) {
+
+			p.old.x = p.pos.x;
+			p.old.y = p.pos.y;
+			//ctx.lineWidth = p.l;
+
+			//ctx.fillEllipse(p.pos.x, p.pos.y, 4, 4)
+			// p.vel.x = p.dir * speedx * PerlinNoise.noise(p.pos.x * .007, p.pos.y * p.speed, p.noisy * .07) * Math.cos(0.7 * 22 / 7 * PerlinNoise.noise(p.pos.x * .007, p.pos.y * .007, p.noisy * .5));
+			// p.vel.y = -speedy * PerlinNoise.noise(p.pos.x * .0007, p.pos.y * .0007, p.noisy * 19) * Math.sin(0.3 * 22 / 7 * PerlinNoise.noise(p.pos.x * .007, p.pos.y * .007, p.noisy * 5));
+
+			// p.pos.x = Math.round(p.pos.x + p.vel.x);
+			// p.pos.y = Math.round(p.pos.y + p.vel.y);
+			p.pos.y += p.speed.y;
+			if (p.pos.x < 0) {
+				p.pos.x = w;
+			}
+			if (p.pos.x > w) {
+				p.pos.x = 0;
+			}
+
+			if (p.pos.y < -height_offset) {
+				// p.pos.y = p.old.y = h+height_offset;
+				// if  (p.me == 0) console.log("reset");
+				particles.splice(i,1);
+			}
+
+			if (p.pos.y > h) {
+			//	p.pos.y = -height_offset;
+				particles.splice(i,1);
+			}
+			//p.acc.x = 0;
+			//p.acc.y = 0;
+			//}
+			p.noisy += .007;
+		}
+
+
+
+		var particles = [];
+
+		function addParticle(x, y, c){
+				//x += randomSticky(spacing, spacing/2);
+			//if (chance(50)) c = rgb(random(200, 255), 0.5);
+			var particle = {
+				pos: new Vector(x, y),
+				old: new Vector(x, y),
+				c: c,
+				sz: sz,
+				me: particles.length,
+				speed: new Vector(0, random(5, 15))
+			}
+			particles.push(particle);
+
+		}
+
+
+		function load(url) {
+			//var vals = [];
+			d3.csv(url, function(error, d) {
+
+				if (error) console.log(error);
+				data = d;
+				loaded = true;
+				//spacing = w / (data.length - 1);
+				//spacing_gap = Math.round(spacing - 3);
+			});
+		}
+
+
+
+
+		function addQuickSettings() {
+			var settings = QuickSettings.create(w - 200, 30, "Settings");
+			// // settings.addRange(title, min, max, value, step, callback);
+
+			settings.addRange("fall rate", 1, 200, speedy, 1, function(value) {
+				speedy = value;
+			});
+
+			settings.addRange("size", 1, 20, sz, 0.1, function(value) {
+				sz = value;
+			});
+
+
+
+
+		}
+	</script>
+
+
+
+
+</body>
+
+</html>

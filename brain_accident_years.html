@@ -1,0 +1,74 @@
+
+<!doctype html>
+<html lang="en">
+ <head>
+  <title>brain.js tutorial</title>
+
+ </head>
+ <body>
+	<script src="https://unpkg.com/brain.js@1.1.2/browser.min.js"></script>
+	<script>
+
+  //var net = new brain.NeuralNetwork();
+  // var net = new brain.NeuralNetwork({
+  //   activation: 'sigmoid',
+  //   hiddenLayers: [4]
+  // });
+  var net = new brain.recurrent.LSTMTimeStep();
+  //network.train(trainingData);
+
+// net.train([
+// {input: { year: 1/1996 }, output: { death: 84/1000 }},
+// {input: { year: 1/1997 }, output: { death: 102/1000 }},
+// {input: { year: 1/1998 }, output: { death: 101/1000 }},
+// {input: { year: 1/1999 }, output: { death: 83/1000 }},
+// {input: { year: 1/2000 }, output: { death: 98/1000 }},
+// {input: { year: 1/2001 }, output: { death: 90/1000 }},
+// {input: { year: 1/2002 }, output: { death: 79/1000 }},
+// {input: { year: 1/2003 }, output: { death: 101/1000 }},
+// {input: { year: 1/2004 }, output: { death: 62/1000 }},
+// {input: { year: 1/2005 }, output: { death: 65/1000 }},
+// {input: { year: 1/2006 }, output: { death: 55/1000 }},
+// {input: { year: 1/2007 }, output: { death: 77/1000 }},
+// {input: { year: 1/2008 }, output: { death: 65/1000 }},
+// {input: { year: 1/2009 }, output: { death: 39/1000 }},
+// {input: { year: 1/2010 }, output: { death: 42/1000 }},
+// {input: { year: 1/2011 }, output: { death: 42/1000 }},
+// {input: { year: 1/2012 }, output: { death: 49/1000 }},
+// {input: { year: 1/2013 }, output: { death: 27/1000 }},
+// {input: { year: 1/2014 }, output: { death: 39/1000 }},
+// {input: { year: 1/2015 }, output: { death: 45/1000 }},
+// //{input: { year: 1/2016 }, output: { death: 45/1000 }}
+// ]);
+
+net.train([
+{input: { year: 1/1996 }, output: { death: 84/1000 }},
+{input: { year: 1/1997 }, output: { death: 102/1000 }},
+{input: { year: 1/1998 }, output: { death: 101/1000 }},
+{input: { year: 1/1999 }, output: { death: 83/1000 }},
+{input: { year: 1/2000 }, output: { death: 98/1000 }},
+{input: { year: 1/2001 }, output: { death: 90/1000 }},
+{input: { year: 1/2002 }, output: { death: 79/1000 }},
+{input: { year: 1/2003 }, output: { death: 101/1000 }},
+{input: { year: 1/2004 }, output: { death: 62/1000 }},
+{input: { year: 1/2005 }, output: { death: 65/1000 }},
+{input: { year: 1/2006 }, output: { death: 55/1000 }},
+{input: { year: 1/2007 }, output: { death: 77/1000 }},
+{input: { year: 1/2008 }, output: { death: 65/1000 }},
+{input: { year: 1/2009 }, output: { death: 39/1000 }},
+{input: { year: 1/2010 }, output: { death: 42/1000 }},
+{input: { year: 1/2011 }, output: { death: 42/1000 }},
+{input: { year: 1/2012 }, output: { death: 49/1000 }},
+{input: { year: 1/2013 }, output: { death: 27/1000 }},
+{input: { year: 1/2014 }, output: { death: 39/1000 }},
+{input: { year: 1/2015 }, output: { death: 45/1000 }},
+//{input: { year: 1/2016 }, output: { death: 45/1000 }}
+]);
+
+// var output = net.run({ year: 1/2017 });
+var output = net.run({ year: 1/2016 });
+console.log(output.death * 1000);
+
+</script>
+</body>
+</html>

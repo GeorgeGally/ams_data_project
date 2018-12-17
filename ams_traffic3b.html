@@ -1,0 +1,200 @@
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF8">
+	<link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" />
+	<script src="js/jquery-1.10.1.min.js"></script>
+	<script src="js/creative_coding.js"></script>
+	<script language="javascript" src="../js/vector.js"></script>
+	<script language="javascript" src="js/quicksettings.min.js"></script>
+
+	<script language="javascript" src="js/canvas.js"></script>
+	<script language="javascript" src="js/particle_engine.js"></script>
+	<script language="javascript" src="js/d3.js"></script>
+
+	<script language="javascript" src="js/Easing.js"></script>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script language="javascript" src="js/set_screen.js"></script>
+
+</head>
+
+<body>
+
+	<script type="text/javascript">
+		var ctx = createCanvas("canvas1");
+		var ctx2 = createHiddenCanvas("canvas2");
+		var settings = false;
+		var min_sz = 0;
+		var max_sz = 600;
+		var max_outlines = 27;
+		var outline_sz = 4;
+		var colour_step = 10;
+		var blur_ammt = 15;
+
+		var years = [];
+		for (var i = 1950; i <= 2016; i++) {
+			years.push(i);
+		}
+
+		frameRate = 60;
+		var engine = new particleEngine();
+		engine.delete(0);
+
+
+
+
+		var loc, zoom, timeline, ease_speed;
+
+		var blue = rgb(0, 174, 239);
+		var orange = rgb(255, 69, 0);
+
+		var min_max;
+		var data = [];
+		var url = 'data/ams_traffic_fatalaties.csv';
+		var ammt = 0;
+		var year = 0;
+		let current_year = 0;
+
+		function setup() {
+			setScreen();
+			load(url);
+
+			if (settings) addQuickSettings();
+
+
+		};
+		ctx.shadowColor = rgba(80, 80, 80, 0.5);
+		ctx.shadowBlur = 2;
+		ctx.shadowOffsetX = 2;
+
+		function draw() {
+			if (data[0]) {
+
+				ctx.background(0, 0.5)
+
+
+				//engine.update();
+				drawParticles()
+				// ammt = tween(ammt, getVal(data[counter]), 4);
+				// ctx.fillEllipse(w / 2, h / 2, ammt);
+				if (frameNumber % 2) {
+					if (counter < data.length - 1) {
+						var x = counter * w / (data.length - 1);
+						addParticles(data[counter], x);
+						// if(data[counter].year)
+						counter = (counter + 1);
+					}
+
+				}
+				// if (counter > data.length - 1) {
+				// 	counter = 0;
+				// 	console.log('year ----------------');
+				// }
+			}
+
+		}
+
+
+		function addParticles(d, x) {
+			//console.log('i', i);
+			var m = parseInt(d['ammt']);
+			for (var j = 0; j < m / 6; j++) {
+				// engine.add(random(-100, 0), random(h), randomGrey());
+				engine.add(x + random(-5, 5), random(h), randomGrey(0, 200));
+				engine.last.speed = new Vector(0, random(1, 10));
+			}
+
+			//console.log(engine);
+		}
+
+
+		function drawParticles() {
+			for (var i = 0; i < engine.length; i++) {
+				var p = engine.particles[i];
+				p.pos.y += p.speed.y;
+				if (p.pos.y > h) p.pos.y = 0;
+				//console.log(p);
+				ctx.fillStyle = p.c;
+				ctx.fillRect(p.pos.x, p.pos.y, 8, 8);
+			}
+		}
+
+		function getVal(d) {
+			var m = parseInt(d['ammt']);
+			var n = map(m, min_max.min, min_max.max, 1, 500)
+
+			return n;
+		}
+
+
+
+
+
+		function load(url) {
+			//var vals = [];
+			d3.csv(url, function(error, d) {
+
+				if (error) console.log(error);
+				data = d;
+				// for (var i = 0; i < data.length; i++) {
+				// 	var d = data[i];
+				// 	var x = i * w/ (data.length-1);
+				// 	//console.log(d);
+				// 	addParticles(d, x);
+				// }
+
+
+				minMax(data);
+				ammt = getVal(data[0]);
+				console.log(min_max);
+
+			});
+		}
+
+
+
+		function minMax(data) {
+			var min = 100000;
+			var max = -100000;
+			for (var i = 0; i < data.length; i++) {
+				var d = parseInt(data[i]['ammt']);
+
+				if (d > max) max = d;
+				if (d < min) min = d;
+
+			}
+
+			min_max = {
+				min: min,
+				max: max
+			};
+
+		}
+
+
+
+		function addQuickSettings() {
+			var settings = QuickSettings.create(w - 200, 30, "Settings");
+			// // settings.addRange(title, min, max, value, step, callback);
+
+			settings.addRange("min_sz", 0, 100, min_sz, 1, function(value) {
+				min_sz = value;
+			});
+
+
+			settings.addRange("max_sz", 1, 2000, max_sz, 1, function(value) {
+				max_sz = value;
+			});
+
+
+		}
+	</script>
+
+
+
+
+</body>
+
+</html>

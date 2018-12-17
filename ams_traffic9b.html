@@ -1,0 +1,235 @@
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF8">
+	<link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" />
+	<script src="js/jquery-1.10.1.min.js"></script>
+	<script language="javascript" src="../js/perlin_noise.js"></script>
+	<script src="js/creative_coding.js"></script>
+	<script language="javascript" src="../js/vector.js"></script>
+	<script language="javascript" src="js/quicksettings.min.js"></script>
+
+	<script language="javascript" src="js/canvas.js"></script>
+	<script language="javascript" src="js/particle_engine.js"></script>
+	<script language="javascript" src="js/d3.js"></script>
+
+	<script language="javascript" src="js/Easing.js"></script>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+</head>
+
+<body>
+
+	<script type="text/javascript">
+
+	var ctx = createHiddenCanvas("c1");
+	var ctx2 = createCanvas("c2");
+	var ctx3 = createCanvas("c3");
+
+		var resolutionScale = window.devicePixelRatio || 1;
+		//noise.seed(Math.random());
+		var years = [];
+		for (var i = 1950; i <= 2016; i++) {
+			years.push(i);
+		}
+
+		frameRate = 120;
+		var engine = new particleEngine();
+		engine.delete(0);
+
+		var scale_back = 1;
+
+
+		ctx.strokeStyle = rgb(160, 0.4);
+
+		var loc, zoom, timeline, ease_speed;
+
+		var blue = rgb(0, 174, 239);
+		var orange = rgb(255, 69, 0);
+
+		var min_max;
+		var data = [];
+		var url = 'data/ams_traffic_fatalaties.csv';
+		var ammt = 0;
+		var year = 0;
+		let current_year = 0;
+		let speedx = 10;
+		let speedy = 20;
+		let loaded = false;
+		let spacing_gap;
+		let spacing;
+		var noisy = 0;
+		var fieldIntensity = 200000;
+		var noiseScale = 2000;
+
+
+		function setup() {
+			ctx.background(0);
+			load(url);
+		};
+
+
+		function draw() {
+			if (loaded && counter < data.length - 1) {
+
+
+				ctx.background(0, 0.05)
+				drawParticles()
+
+				if (frameNumber % 50) {
+					if (counter < data.length - 1) {
+						var x = counter * w / (data.length - 1);
+						addParticles(data[counter], x);
+						counter ++;
+					}
+
+				}
+
+			}
+			// ctx.fillStyle = rgb(255)
+			// ctx.fillEllipse(w/2, h/2, 100)
+			//console.log('particles.length', particles.length);
+			ctx2.drawImage(ctx.canvas, 0, 0, w, h);
+
+		}
+
+
+		function addParticles(d, x) {
+
+			var m = parseInt(d['ammt']) / scale_back;
+
+			for (var j = 0; j < m; j++) {
+				addParticle(x, randomInt(h));
+			}
+
+		}
+
+				var particles = [];
+
+				function addParticle(x, y){
+
+					c = rgba(random(20, 205), 0, 0, 0.5);
+					x += random(spacing_gap) + randomInt(-5, 5);
+					y = randomInt(h)
+					if (chance(50)) c = rgb(random(10, 255), 0.4);
+					var particle = {
+						pos: new Vector(x, y),
+						old: new Vector(x, y),
+						c: c,
+						sz: 2,
+						noisy: random(1),
+						speed: random(1, 12) / 100,
+						vel: new Vector(0, 0),
+						acc: new Vector(0, 0),
+						count: 0,
+						noisy: random(1, 8) / 10001,
+						dir: 1
+					}
+					particles.push(particle);
+
+				}
+
+
+				// function addParticles(d, x) {
+				// 	//console.log('i', i);
+				// 	var m = parseInt(d['ammt']);
+				// 	for (var j = 0; j < m / 2; j++) {
+				// 		// engine.add(random(-100, 0), random(h), randomGrey());
+				// 		engine.add(x + randomInt(-5, 5), randomInt(h), randomGrey(50, 240, 30));
+				// 		var p = engine.last;
+				// 		//engine.last.speed = new Vector(0, randomInt(1, 5));
+				// 		p.speed = random(1, 12) / 100;
+				// 		p.c = rgba(random(20, 205), 0, 0, 0.5);
+				// 		if (chance(50)) engine.last.c = rgb(random(100, 255), 0.5);
+				// 		p.vel = new Vector(0, 0);
+				// 		p.acc = new Vector(0, 0);
+				// 		p.noisy = random(1, 8) / 10001;
+				// 		p.dir = 1;
+				// 		p.sz = 2;
+				// 	}
+
+					//console.log(engine);
+				//}
+
+
+		function drawParticles() {
+			for (var i = 0; i < particles.length; i++) {
+				var p = particles[i];
+				moveParticle(p, i);
+
+				ctx.fillStyle = p.c;
+				ctx.fillRect(p.pos.x, p.pos.y, p.sz, p.sz);
+			}
+		}
+
+
+
+		function moveParticle(p, i) {
+
+			p.old.x = p.pos.x;
+			p.old.y = p.pos.y;
+			//ctx.lineWidth = p.l;
+
+			//ctx.fillEllipse(p.pos.x, p.pos.y, 4, 4)
+			p.vel.x = p.dir * speedx * PerlinNoise.noise(p.pos.x * .007, p.pos.y * p.speed, p.noisy * .07) * Math.cos(0.7 * 22 / 7 * PerlinNoise.noise(p.pos.x * .007, p.pos.y * .007, p.noisy * .5));
+			p.vel.y = -speedy * PerlinNoise.noise(p.pos.x * .0007, p.pos.y * .0007, p.noisy * 19) * Math.sin(0.3 * 22 / 7 * PerlinNoise.noise(p.pos.x * .007, p.pos.y * .007, p.noisy * 5));
+
+			p.pos.x += p.vel.x;
+			p.pos.y += p.vel.y;
+
+			// if (p.pos.x < 0) {
+			// 	p.pos.x = w;
+			// }
+			if (p.pos.x > w) {
+				p.pos.x = 0;
+			}
+
+			if (p.pos.y > h) {
+				p.pos.y = 0;
+			}
+
+			p.noisy += .007;
+		}
+
+		function getVal(d) {
+			var m = parseInt(d['ammt']);
+			var n = map(m, min_max.min, min_max.max, 1, 500)
+
+			return n;
+		}
+
+
+
+
+
+		function load(url) {
+			//var vals = [];
+			d3.csv(url, function(error, d) {
+
+				if (error) console.log(error);
+				data = d;
+				console.log('d', d);
+				var ammt = 0;
+				for (var i = 0; i < d.length; i++) {
+					ammt += parseInt(d[i]['ammt']);
+				}
+				console.log('ammt', ammt);
+				loaded = true;
+				spacing = w / (data.length - 1);
+				spacing_gap = Math.round(spacing - 3);
+			});
+		}
+
+
+
+	</script>
+
+
+
+
+</body>
+
+</html>
