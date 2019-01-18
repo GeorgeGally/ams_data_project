@@ -23,14 +23,6 @@
 </head>
 
 <body>
-  <!-- <div id="container">
-    <div class="Aligner">
-      <div class="Aligner-item Aligner-item--top"></div>
-      <div class="Aligner-item header">
-        Amsterdam PM2.5 Air Pollution Measurements 2013-2016
-      </div>
-    </div>
-  </div> -->
 
   <script>
     var ctx = createCanvas("canvas1");
@@ -118,8 +110,6 @@
       p.angle2 += p.rotation_speed / rotation_slow;
       p.orbit.x = p.pos.x + Math.cos(p.angle2) * r;
       p.orbit.y = p.pos.y + Math.sin(p.angle2) * r;
-
-
     }
 
     function haveIReachedTheBottom() {

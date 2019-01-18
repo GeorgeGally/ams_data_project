@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<title>Creative Coding Yea!</title>
+
+<head>
+  <meta charset="utf-8">
+
+  <script language="javascript" src="js/creative_coding.js"></script>
+  <script language="javascript" src="js/canvas.js"></script>
+  <script language="javascript" src="js/vector.js"></script>
+  <script language="javascript" src="js/utils.js"></script>
+
+  <script language="javascript" src="js/d3.js"></script>
+  <script language="javascript" src="js/jquery-1.10.1.min.js"></script>
+
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" />
+  <link rel="stylesheet" href="css/style.css" type="text/css" media="screen" />
+  <link rel="stylesheet" href="css/pollution.css" type="text/css" media="screen" />
+
+
+</head>
+
+<body>
+
+
+  <script>
+
+  var min_sz = 80;
+  var max_sz = 150;
+
+  var DEVICE_SCALE = 1.2;
+
+  frameRate = 120;
+
+  var speed = 78;
+  var totalFrames = 0;
+
+  var rotation_slow = 5 * DEVICE_SCALE;
+  var offset_shift = 100 / DEVICE_SCALE;
+  var my_sticky = 20 / (DEVICE_SCALE * 2);
+
+  var ctx3 = createCanvas("canvas3");
+  var ctx = createCanvas("canvas1");
+  var ctx2 = createCanvas("canvas2");
+  var url = '../../data/ams_pm2.5_1_year_day_max.csv';
+
+    var particles = [];
+    var totals = [];
+    var particles_this_year = [];
+    var data = [];
+    let deg = 0;
+
+    var max_value, min_value;
+    var temp_particle = [];
+    var min, max, min_max;
+
+    let last_trigger = frameCount;
+
+
+
+
+    let current_year = 2014;
+
+    var years = [];
+
+
+    function setup() {
+      setScreen();
+      ctx3.background(255);
+      ctx3.background(240);
+      load(url);
+    };
+
+
+    function draw() {
+
+      //if (frameCount % 10 == 0) ctx3.background(0, 0.018);
+      var bg = Math.round((totalFrames + frameCount) / 7);
+      if (bg > 255) bg = 255;
+      ctx3.background(255 - bg);
+      ctx2.clear();
+      //ctx.background(0, 0.018)
+      drawParticles();
+      haveIReachedTheBottom();
+      //if (particles_this_year[0]) console.log(Math.round(degrees(getAngle(particles_this_year[0].speed))));
+      //if (particles_this_year[0]) console.log(Math.round(degrees((particles_this_year[0].angle))));
+    }
+
+    function drawParticles() {
+      for (var i = 0; i < particles_this_year.length; i++) {
+        var p = particles_this_year[i];
+        update(p);
+        drawArm(p);
+        drawOrbits(p);
+      }
+    }
+
+
+    function update(p) {
+
+      var deg = Math.round(degrees(getAngle(p.speed)));
+      if (deg >= 55 && frameCount > 100) {
+        p.on = false;
+        //frameCount = 0;
+      }
+
+      calcRotation(p);
+      calCPos(p);
+      calcOrbits(p);
+
+    }
+
+    function calcRotation(p) {
+      if (p.on == false && degrees(p.angle) < 200) {
+        p.angle += p.rotation_speed / rotation_slow;
+        //console.log(degrees(p.angle));
+      } else if (p.on) {
+        p.angle += p.rotation_speed / rotation_slow;
+      }
+
+    }
+
+    function calCPos(p) {
+      p.old_pos.y = p.pos.y;
+      p.pos.y = getY(p.ht, p.speed);
+    }
+
+    function calcOrbits(p) {
+      //var r = p.sz / 2 + p.radius;
+      //r = 100;
+
+      if (p.on) {
+        p.r = Math.sin((frameCount + p.sz * 2) / speed) * p.radius * 1.2;
+      } else if (p.r > 5){
+        p.r -=5;
+      }
+
+      p.orbit.x = p.pos.x + Math.cos(p.angle) * p.r;
+      p.orbit.y = p.pos.y + Math.sin(p.angle) * p.r;
+      //}
+    }
+
+
+    function haveIReachedTheBottom() {
+      var on_count = 0;
+      if (particles_this_year[0] && !particles_this_year[0].on) {
+        for (var i = 0; i < particles_this_year.length; i++) {
+          var p = particles_this_year[i];
+          // if (p.on == false && degrees(p.angle) < 180) on_count++;
+          if (p.on == false && (degrees(p.angle) >= 200)) on_count++;
+          //console.log(particles_this_year.length, on_count);
+        }
+        //
+        if (on_count == particles_this_year.length) nextYear();
+      }
+
+    }
+
+
+    function nextYear() {
+      old_particles = particles_this_year;
+      current_year++;
+      totalFrames += frameCount;
+      frameCount = 0;
+      console.log('current_year', current_year);
+      particles_this_year = getThisYearsParticles();
+      console.log("-- " + particles_this_year.length);
+      for (var i = 0; i < particles_this_year.length; i++) {
+        var p = particles_this_year[i];
+        p.on = true;
+        //update(p);
+      }
+      //console.log('particles_this_year', particles_this_year);
+    }
+
+    function getY(ht, speed) {
+      //console.log(degrees(getAngle(speed)));
+      // return ht + h / 2 + getAngle(speed) * (h / 2 - ht) + offset_shift;
+      return h + offset_shift + getAngle(speed) * ht - ht;
+    }
+
+
+    function getAngle(speed) {
+      return Math.sin(radians(90) + frameCount / speed);
+    }
+
+
+    // DRAWING ////////////////////////////
+
+
+    function drawArm(p) {
+
+      // ctx.fillMe('#0095a8');
+      ctx.fillMe('#ee0000');
+      //ctx.fillMe(0);
+      ctx.fillEllipse(p.ghost_pos.x, p.ghost_pos.y, 8, 8);
+      ctx.fillEllipse(p.pos.x, p.pos.y, 8, 8);
+
+    }
+
+
+    function drawOrbits(p) {
+      // ctx2.fillStyle = rgba(0);
+      // ctx2.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
+      ctx.lineWidth = 0.8;
+      ctx.fillStyle = rgba(0, 0.2);
+      ctx.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
+      ctx.strokeStyle = rgba(255, 0.3);
+      ctx.strokeCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
+      drawTopLayer(p);
+    }
+
+
+    function drawTopLayer(p) {
+
+      ctx2.strokeStyle = rgba(255);
+      ctx2.line(p.pos.x, p.pos.y, p.orbit.x, p.orbit.y);
+      ctx2.fillMe(255);
+      ctx2.fillEllipse(p.pos.x, p.pos.y, 4, 4);
+      ctx2.lineWidth = 0.5;
+      ctx2.fillStyle = rgba(0, 0.4);
+      ctx2.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
+      ctx2.strokeMe(255, 0.5);
+      ctx2.strokeCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
+      // ctx2.fillMe(255);
+      // ctx2.fillCircle(p.orbit.x, p.orbit.y, 10, 10);
+      ctx2.fillMe(255);
+      ctx2.fillCircle(p.orbit.x, p.orbit.y, 5, 5);
+      ctx2.fillMe(255);
+      // ctx2.fillText(p.target, p.pos.x + 6, h - 10);
+      ctx2.fillText("Netherlands PM2.5 measurements: " + current_year, 20, h - 20);
+      //ctx2.fillText(p.ht, p.pos.x - 20, h - 10);
+      //ctx2.fillText(Math.round(degrees(p.angle)), p.pos.x - 20, h - 30);
+
+    }
+
+
+    function getThisYearsParticles() {
+      return particles.filter(p => p.year == current_year);
+    }
+
+
+    function addParticles(data) {
+
+      for (var i = 0; i < data.length; i++) {
+        var d = data[i];
+
+        var x = sticky(map(d.Longitude, min_max.min_lng, min_max.max_lng, 2 * my_sticky / DEVICE_SCALE, w - 3 * my_sticky / DEVICE_SCALE), my_sticky);
+
+        var ii = checkIfAlreadySameXValue(x, d.Year);
+        var val = parseFloat(d.AQValue);
+        //console.log(val);
+        if (ii != undefined) {
+          temp_particle[ii].sz += val;
+          temp_particle[ii].target += val;
+        } else {
+          temp_particle.push({
+            x: x,
+            sz: val,
+            target: val,
+            year: d.Year,
+            on: true,
+            ht: 0
+          });
+        }
+      }
+
+
+      for (var i = 0; i < temp_particle.length; i++) {
+        var p = temp_particle[i];
+        addParticle(p);
+      }
+
+
+      min_value = Math.min.apply(Math, particles.map(function(p) {
+        return p.sz;
+      }));
+
+      max_value = Math.max.apply(Math, particles.map(function(p) {
+        return p.sz;
+      }));
+
+      particles.forEach(p => {
+        p.ht = Math.round(map(p.sz, min_value, max_value, h * 0.15, h * 0.5));
+        p.sz = Math.round(map(p.sz, min_value, max_value, min_sz, max_sz)) / DEVICE_SCALE;
+        p.rotation_speed = 1.2 - map(p.sz, min_value, max_value, 0.9, 1.1);
+      });
+
+      console.log('current_year', current_year);
+      particles_this_year = getThisYearsParticles();
+      console.log('particles_this_year', particles_this_year);
+
+    }
+
+
+    function addParticle(p) {
+
+      var pos = {
+        x: p.x + 40,
+        y: h
+      };
+
+      var particle = {
+        pos: pos,
+        ghost_pos: pos,
+        old_pos: pos,
+        sz: p.sz,
+        radius: 80 / DEVICE_SCALE,
+        orbit: {
+          x: 1,
+          y: 1
+        },
+        ghost_orbit: {
+          x: 1,
+          y: 1
+        },
+        ht: p.ht,
+        target: p.target,
+        on: true,
+        old_angle: 350,
+        angle: radians(random(40, 170)),
+        rotation_speed: 1,
+        speed: speed,
+        dir: -1,
+        year: p.year,
+        r: 0
+      };
+      //console.log('particle.sz', particle.sz);
+      particles.push(particle);
+
+    }
+  </script>
+
+</body>
+
+</html>

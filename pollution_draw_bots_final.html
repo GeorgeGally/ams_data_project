@@ -23,14 +23,6 @@
 </head>
 
 <body>
-  <!-- <div id="container">
-    <div class="Aligner">
-      <div class="Aligner-item Aligner-item--top"></div>
-      <div class="Aligner-item header">
-        Amsterdam PM2.5 Air Pollution Measurements 2013-2016
-      </div>
-    </div>
-  </div> -->
 
   <script>
     var ctx = createCanvas("canvas1");
@@ -51,12 +43,12 @@
 
     let last_trigger = frameCount;
 
-    var speed = 25;
+    var speed = 97;
 
     var offset_shift = 40;
     var my_sticky = 100;
 
-    var rotation_slow = 5;
+    var rotation_slow = 15;
 
     let current_year = 2014;
 
@@ -68,22 +60,16 @@
 
     function setup() {
       setScreen();
-      ctx.background(0);
+      ctx.background(255);
       load(url);
 
       $('.header').delay(5000).fadeOut('slow');
     };
 
-    var txt =
-      "More than 80% of people in European cities live in air quality below World Health Organization standards. In 2014, PM2.5 was linked to more than 420,000 deaths in Europe - around 75% of all premature deaths. Globally PM2.5 killed more than seven million people. Both Europe and the Netherlands, however, have halved their pollution output since the 1990s, showing that current reduction programmes are going a long way to making our cities more livable."
-
-    var sub = "A data sculpture by George Gally. www.radarboy.com"; 
-
-
 
     function draw() {
 
-      if (frameCount % 60 == 0) ctx.background(0, 0.01);;
+      if (frameCount % 10 == 0) ctx.background(0, 0.01);;
       ctx2.clear();
 
       drawParticles();
@@ -280,12 +266,12 @@
       // ctx2.fillStyle = rgba(0);
       // ctx2.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
       ctx.lineWidth = 0.5;
-      ctx2.lineWidth = 1;
+      ctx2.lineWidth = 0.5;
       ctx2.fillStyle = rgba(255);
       ctx2.fillCircle(p.orbit.x, p.orbit.y, 5, 5);
       ctx.fillStyle = rgba(0, 0.2);
       ctx.fillCircle(p.ghost_orbit.x, p.ghost_orbit.y, p.sz, p.sz);
-      ctx.strokeStyle = rgba(255);
+      ctx.strokeStyle = rgba(0);
       ctx.strokeCircle(p.ghost_orbit.x, p.ghost_orbit.y, p.sz, p.sz);
       ctx.fillStyle = rgba(0, 0.2);
       ctx.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);

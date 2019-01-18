@@ -10,6 +10,7 @@
   <script language="javascript" src="js/vector.js"></script>
 
   <script language="javascript" src="js/d3.js"></script>
+  <script language="javascript" src="js/tween.js"></script>
   <script language="javascript" src="js/jquery-1.10.1.min.js"></script>
 
   <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
@@ -24,13 +25,18 @@
 
 <body>
 
+
   <script>
+
     var ctx3 = createCanvas("canvas3");
     var ctx = createCanvas("canvas1");
     var ctx2 = createCanvas("canvas2");
-    frameRate = 60;
-    var DEVICE_SCALE = 1.2;
 
+    frameRate = 220;
+    var DEVICE_SCALE = 1.2;
+    var bg = {
+      val: 255
+    };
     var url = '../../data/ams_pm2.5_1_year_day_max.csv';
 
     var particles = [];
@@ -38,16 +44,18 @@
     var particles_this_year = [];
     var data = [];
     let deg = 0;
-
+    var finished = 0;
     var max_value, min_value;
     var temp_particle = [];
     var min, max, min_max;
-
+    var tween = new TWEEN.Tween(bg).to({
+      val: 0
+    }, 20000).start();
     let last_trigger = frameCount;
 
 
-    var speed = 180;
-    var rotation_slow = 10 * DEVICE_SCALE;
+    var speed = 120;
+    var rotation_slow = 7 * DEVICE_SCALE;
 
     var offset_shift = 80 / DEVICE_SCALE;
     var my_sticky = 30 / (DEVICE_SCALE * 2);
@@ -64,19 +72,23 @@
 
     function setup() {
       setScreen();
-      ctx.background(255);
+      ctx3.background(255);
+      ctx3.background(240);
       load(url);
-
-      $('.header').delay(5000).fadeOut('slow');
     };
 
+
     function draw() {
-      ctx3.background(0, 0.008);
-      ctx.background(0, 0.005);
+      TWEEN.update();
+      //console.log(bg.val);
+      // ctx3.background(0, 0.0045);
+      // ctx.background(0, 0.0015);
+      ctx3.background(bg.val);
+      //ctx.background(0, 0.0015);
       ctx2.clear();
 
       drawParticles();
-      haveIReachedTheBottom() ? nextYear() : 0;
+      //haveIReachedTheBottom() ? nextYear() : 0;
 
     }
 
@@ -93,24 +105,58 @@
     }
 
     function nextYear() {
-      current_year++;
-      // frameCount = 0;
+
+      finished = 0;
       console.log('current_year', current_year);
-      var particles_last_year = particles_this_year;
-      particles_this_year = getThisYearsParticles();
+      old_particles = particles_this_year; // for (var i = 0; i < particles_this_year.length; i++) { // var p=p articles_this_year[i]; // p.old_angle=p .angle; // }
+      //current_year++;
+
+      var tweens = [];
+      var tweens2 = [];
+      finished = 0;
       for (var i = 0; i < particles_this_year.length; i++) {
         var p = particles_this_year[i];
-        p.angle = particles_last_year[i].angle;
+
+        tweens[i] = new TWEEN.Tween(p.pos).to({
+          y: p.target * 3.5
+        }, 5000).start();
+        tweens[i].easing(TWEEN.Easing.Quadratic.In);
+        tweens2[i] = new TWEEN.Tween(p.pos).to({
+          y: h
+        }, 5000)
+        .easing(TWEEN.Easing.Quadratic.In)
+        .onComplete(function() {
+          ended();
+        });
+        tweens[i].chain(tweens2[i]);
+
+        //console.log(p.target);
+        if (old_particles[i]) p.angle = old_particles[i].angle;
         update(p);
-    }
+      }
       //console.log('particles_this_year', particles_this_year);
     }
 
+    function ended() {
+      finished++;
+      if (finished == particles_this_year.length - 1) onRepeat();
+    }
+
+    function onRepeat() {
+      current_year++;
+
+      particles_this_year = getThisYearsParticles();
+      nextYear();
+    }
+
+
     function update(p) {
       p.old_pos.y = p.pos.y;
-      p.pos.y = Y(p.offset, p.speed);
-      var r = p.sz/2 + p.radius
+      var r = p.sz / 2 + p.radius
       p.angle2 += p.rotation_speed / rotation_slow;
+      // p.ghost_orbit.x = p.ghost_pos.x + Math.cos(p.angle2) * r;
+      // p.ghost_orbit.y = p.ghost_pos.y + Math.sin(p.angle2) * r;
+      // p.angle2 += p.rotation_speed / rotation_slow;
       p.orbit.x = p.pos.x + Math.cos(p.angle2) * r;
       p.orbit.y = p.pos.y + Math.sin(p.angle2) * r;
 
@@ -121,9 +167,8 @@
 
       if (particles[0]) {
 
-        if (deg > 355) console.log("==================");
         deg = Math.round(degrees(frameCount / particles[0].speed));
-        if (frameCount > last_trigger + 100 && deg < 3) {
+        if (frameCount > last_trigger + 100 && deg < 1) {
           last_trigger = frameCount = 0;
           return true;
         }
@@ -141,7 +186,7 @@
       for (var i = 0; i < data.length; i++) {
         var d = data[i];
 
-        var x = sticky(map(d.Longitude, min_max.min_lng, min_max.max_lng, 1.7 * my_sticky / DEVICE_SCALE, w - 2.6 * my_sticky / DEVICE_SCALE), my_sticky);
+        var x = sticky(map(d.Longitude, min_max.min_lng, min_max.max_lng, 2 * my_sticky / DEVICE_SCALE, w - 3 * my_sticky / DEVICE_SCALE), my_sticky);
 
         var ii = checkIfAlreadySameXValue(x, d.Year);
         var val = parseFloat(d.AQValue);
@@ -176,7 +221,7 @@
       particles.forEach(p => {
         p.sz = Math.round(map(p.sz, min_value, max_value, 80, 140)) / DEVICE_SCALE;
         p.rotation_speed = 1.2 - map(p.sz, min_value, max_value, 0.9, 1.1),
-        p.offset = p.sz * 0.9;
+          p.offset = p.sz * .9;
       });
 
       console.log('current_year', current_year);
@@ -213,6 +258,7 @@
         offset: p.offset,
         target: p.target,
         angle: 350,
+        old_angle: 350,
         angle2: random(360),
         rotation_speed: 1,
         speed: speed,
@@ -240,28 +286,28 @@
       ctx2.fillEllipse(p.pos.x, p.pos.y, 4, 4);
       // ctx.fillMe('#0095a8');
       ctx.fillMe('#ee0000');
-      //ctx.fillEllipse(p.ghost_pos.x, p.ghost_pos.y, 8, 8);
+      ctx.fillEllipse(p.ghost_pos.x, p.ghost_pos.y, 8, 8);
       ctx.fillEllipse(p.pos.x, p.pos.y, 8, 8);
     }
 
     function drawOrbits(p) {
-      ctx2.fillStyle = rgba(0);
-      ctx2.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
+      // ctx2.fillStyle = rgba(0);
+      // ctx2.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
       ctx.lineWidth = 1;
       ctx2.lineWidth = 1;
-      // ctx2.fillStyle = rgba(255, 0, 0);
-      // ctx2.fillCircle(p.orbit.x, p.orbit.y, 5, 5);
+      ctx2.fillStyle = rgba(255);
+      ctx2.fillCircle(p.orbit.x, p.orbit.y, 5, 5);
 
       //if(frameCount % 2 == 0 ) {
-        ctx.fillStyle = rgba(0, 0.2);
-        ctx.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
-        ctx.strokeStyle = rgba(255, 0.3);
-        ctx.strokeCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
-
+      ctx.fillStyle = rgba(0, 0.2);
+      ctx.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
+      ctx.strokeStyle = rgba(255, 0.5);
+      ctx.strokeCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
+      ctx2.fillMe(255);
+      ctx2.fillCircle(p.orbit.x, p.orbit.y, 5, 5);
       //}
-    // ctx2.fillMe(255, 0, 0);
-    ctx2.fillMe(255);
-    ctx2.fillCircle(p.orbit.x, p.orbit.y, 6, 6);
+      //ctx2.fillMe(255);
+      //ctx2.fillEllipse(p.pos.x, p.pos.y, 4, 4);
 
     }
 
@@ -279,6 +325,12 @@
       getTotals(data);
 
       last_trigger = frameCount = 0;
+
+      //console.log(tween);
+      // TweenLite.to(bg, 20, {
+      //   val: 0,
+      // });
+      nextYear();
     }
 
     function getTotals(data) {
@@ -423,8 +475,6 @@
     function Y(offset, speed) {
       return offset + h / 2 + Math.sin(radians(90) + frameCount / speed) * (h / 2 - offset) + offset_shift;
     }
-
-
   </script>
 
 </body>

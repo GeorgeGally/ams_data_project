@@ -64,7 +64,7 @@
 
     function setup() {
       setScreen();
-      ctx.background(0);
+      ctx.background(255);
       load(url);
 
       $('.header').delay(5000).fadeOut('slow');
@@ -74,7 +74,7 @@
 
     function draw() {
 
-      if (frameCount % 60 == 0) ctx.background(0, 0.01);;
+      if (frameCount % 30 == 0) ctx.background(0, 0.02);;
       ctx2.clear();
 
       drawParticles();
@@ -275,7 +275,7 @@
     function drawOrbits(p) {
       // ctx2.fillStyle = rgba(0);
       // ctx2.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
-      ctx.lineWidth = 1.3;
+      ctx.lineWidth = 1;
       ctx2.lineWidth = 1;
       ctx2.fillStyle = rgba(255);
       ctx2.fillCircle(p.orbit.x, p.orbit.y, 5, 5);
@@ -283,9 +283,9 @@
       //ctx.fillCircle(p.ghost_orbit.x, p.ghost_orbit.y, p.sz, p.sz);
       //ctx.strokeStyle = rgba(255);
       //ctx.strokeCircle(p.ghost_orbit.x, p.ghost_orbit.y, p.sz, p.sz);
-      ctx.fillStyle = rgba(0, 0.2);
+      ctx.fillStyle = rgba(255, 0.2);
       ctx.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
-      ctx.strokeStyle = rgba(255, 0.7);
+      ctx.strokeStyle = rgba(0, 0.7);
       ctx.strokeCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
       ctx2.fillMe(255);
       ctx2.fillCircle(p.orbit.x, p.orbit.y, 5, 5);

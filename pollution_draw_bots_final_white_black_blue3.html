@@ -26,7 +26,12 @@
   <script>
     var ctx = createCanvas("canvas1");
     var ctx2 = createCanvas("canvas2");
-    frameRate = 60;
+
+    let current_year = 2014;
+    frameRate = 120;
+    let rotation_slow = 1.4;
+    var speed = 0.02;
+
     var DEVICE_SCALE = 1.2;
 
     var url = '../../data/ams_pm2.5_1_year_day_max.csv';
@@ -40,13 +45,10 @@
     var temp_particle = [];
     var min, max, min_max;
 
-    let last_trigger = frameCount;
 
-    var speed = 135;
-    var offset_shift = 160;
-    var my_sticky = 200;
+    var offset_shift = 100;
+    var my_sticky = 180;
 
-    let current_year = 2013;
 
     var years = [];
     for (var i = 2013; i <= 2016; i++) {
@@ -61,24 +63,24 @@
     };
 
     function draw() {
-
       if (frameCount % 60 == 0) ctx.background(0, 0.01);;
       ctx2.clear();
       drawParticles();
       haveWeReachedTheBottom() ? nextYear() : 0;
-
+      if (particles[0]) console.log(Math.round(degrees(getPos())));
     }
+
 
     function update(p) {
       p.old_pos.y = p.pos.y;
-      if (!p.bottom) p.pos.y = Y(p.offset, speed);
-      // var r = p.sz / 2 + p.radius
+      if (!p.bottom) p.pos.y = getY(p.ht);
+
       if (!p.angle_off) {
         var r = p.sz * Math.sin((p.me + frameCount) / 100) + 30;
         var old_angle = p.angle;
-        p.angle += radians(p.rotation_speed);
+        p.angle += radians(p.rotation_speed * rotation_slow);
         var ghost_angle = p.angle - old_angle / 2;
-        if (p.angle > radians(360)) p.angle = 0;
+        if (p.angle >= radians(360)) p.angle = 0;
 
         p.ghost_orbit.x = p.pos.x + Math.cos(p.angle) * r;
         p.ghost_orbit.y = p.pos.y + Math.sin(p.angle) * r;
@@ -88,6 +90,14 @@
     }
 
 
+    function getY(ht) {
+      return h / 2 + offset_shift + getPos() * ht;
+    }
+
+
+    function getPos() {
+      return Math.sin(radians(92) + frameCount * speed)
+    }
 
 
     function drawParticles() {
@@ -99,47 +109,24 @@
       }
     }
 
-    function nextYear() {
-      current_year++;
 
-      last_trigger = frameCount = 0;
+    function nextYear() {
+
+      current_year++;
+      frameCount = 0;
       console.log('current_year', current_year);
       particles_this_year = getThisYearsParticles();
+
       for (var i = 0; i < particles_this_year.length; i++) {
         var p = particles_this_year[i];
-        //p.pos.y = Y(p.offset, speed);
         update(p);
       }
 
     }
 
-    // have thy all rreached the reached_bottom
-    // have they rotated 360
-
 
     function haveWeReachedTheBottom() {
-      var bottom = true;
-      if (particles[0]) {
-        //console.log(particles_this_year.length);
-        for (var i = 0; i < particles_this_year.length; i++) {
-          var p = particles_this_year[i];
-
-          if (p.pos.y > h / 2 + offset_shift + p.offset - 10 && frameCount > last_trigger + 250) {
-            p.bottom = true;
-          }
-
-          if (p.bottom && !p.angle_off && (p.angle < radians(120) || p.angle > radians(350))) {
-            p.angle_off = true;
-          } else {
-
-          }
-          if (!p.angle_off) bottom = false;
-
-        }
-        if (bottom == true) return true;
-
-      }
-
+      if (Math.round(getPos()) == 57) return true;
     }
 
 
@@ -156,26 +143,24 @@
       ctx2.fillMe(0);
       ctx2.fillEllipse(p.pos.x, p.pos.y, 4, 4);
       ctx.fillMe('#aa0000');
-      //ctx.fillMe('#ee0000');
-      //ctx.fillMe(0);
+      ctx.fillMe('#ee0000');
+      // ctx.fillMe(0);
       ctx.fillEllipse(p.pos.x, p.pos.y, 8, 8);
+
     }
 
+
     function drawOrbits(p) {
-      // ctx2.fillStyle = rgba(0, 0.2);
-      // ctx2.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
+
       ctx.lineWidth = 1;
       ctx2.lineWidth = 1;
-      // ctx2.fillStyle = rgba(255, 0, 0);
-      // ctx2.fillCircle(p.orbit.x, p.orbit.y, 5, 5);
 
       ctx.fillStyle = rgba(0, 0.1);
       ctx.fillCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
-      //ctx.fillCircle(p.ghost_orbit.x, p.ghost_orbit.y, p.sz, p.sz);
+
       ctx.strokeStyle = rgba(255, 0.2);
       ctx.strokeCircle(p.orbit.x, p.orbit.y, p.sz, p.sz);
 
-      //ctx2.fillMe('#ee0000');
       ctx2.fillMe('#0095a8');
       ctx2.fillMe(255);
       ctx2.fillCircle(p.orbit.x, p.orbit.y, 4, 4);
@@ -211,7 +196,7 @@
             sz: val,
             target: val,
             year: d.Year,
-            offset: 0
+            ht: 0
           });
         }
       }
@@ -234,7 +219,7 @@
       particles.forEach(p => {
         p.sz = Math.round(map(p.sz, min_value, max_value, 80, 140)) / DEVICE_SCALE;
         p.rotation_speed = 3.9 - map(p.sz, min_value, max_value, 1.4, 2.6),
-          p.offset = p.sz * 2.4;
+          p.ht = p.sz * 2.4;
       });
 
       console.log('current_year', current_year);
@@ -248,15 +233,15 @@
       var particle = {
         pos: {
           x: p.x + 50,
-          y: Y(p.offset, speed)
+          y: getY(p.ht)
         },
         ghost_pos: {
           x: p.x + 50,
-          y: Y(p.offset, speed)
+          y: getY(p.ht)
         },
         old_pos: {
           x: p.x + 50,
-          y: Y(p.offset, speed)
+          y: getY(p.ht)
         },
         sz: p.sz,
         radius: 80 / DEVICE_SCALE,
@@ -268,7 +253,7 @@
           x: 1,
           y: 1
         },
-        offset: p.offset,
+        ht: p.ht,
         target: p.target,
         angle: radians(random(360)),
         //angle2: random(360),
@@ -289,12 +274,12 @@
 
     // UTILS ////////////////////////////
 
+
     function afterLoad() {
       fixData(data);
       min_max = minMaxLatLng(data);
       addParticles(data)
       getTotals(data);
-      last_trigger = 0;
       frameCount = 0;
       ctx.background(255);
     }
@@ -312,6 +297,7 @@
       }
 
     }
+
 
     function setScreen() {
 
@@ -350,6 +336,7 @@
         d.AQValue = parseInt(d.AQValue);
       }
     }
+
 
     function checkIfAlreadySameXValue(x, year) {
       for (var i = 1; i < temp_particle.length; i++) {
@@ -405,6 +392,7 @@
 
     }
 
+
     function minMaxLatLng(data) {
 
       var min_lat = 10000;
@@ -428,18 +416,15 @@
       }
     }
 
+
     function load(url) {
 
       d3.csv(url, function(error, d) {
-
         if (error) console.log(error);
         data = d;
         afterLoad();
       });
-    }
 
-    function Y(offset, speed) {
-      return h / 2 + offset_shift + Math.sin(radians(90) + frameCount / speed) * (offset);
     }
   </script>
 

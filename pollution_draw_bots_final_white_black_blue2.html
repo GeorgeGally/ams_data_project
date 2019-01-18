@@ -25,11 +25,18 @@
 <body>
 
   <script>
+
+    frameRate = 120;
+    var DEVICE_SCALE = 1.2;
+    var speed = 80;
+    var offset_shift = 120;
+    var my_sticky = 160;
+    let current_year = 2014;
+
+    var rotation_slow = 10 * DEVICE_SCALE;
+
     var ctx = createCanvas("canvas1");
     var ctx2 = createCanvas("canvas2");
-    frameRate = 60;
-    var DEVICE_SCALE = 1.2;
-
     var url = '../../data/ams_pm2.5_1_year_day_max.csv';
 
     var particles = [];
@@ -41,18 +48,7 @@
     var temp_particle = [];
     var min, max, min_max;
 
-    let last_trigger = frameCount;
-
-    var speed = 135;
-    var offset_shift = 160;
-    var my_sticky = 200;
-
-    let current_year = 2013;
-
     var years = [];
-    for (var i = 2013; i <= 2016; i++) {
-      years.push(i);
-    }
 
 
     function setup() {
@@ -63,21 +59,22 @@
 
     function draw() {
 
-      if (frameCount % 60 == 0) ctx.background(255, 0.01);;
+      if (frameCount % 60 == 0) ctx.background(0, 0.01);
       ctx2.clear();
       drawParticles();
       haveWeReachedTheBottom() ? nextYear() : 0;
-
+      if (particles_this_year[0]) console.log(Math.round(degrees(getPos())));
     }
 
     function update(p) {
       p.old_pos.y = p.pos.y;
-      if (!p.bottom) p.pos.y = Y(p.offset, speed);
+      if (!p.bottom) p.pos.y = getY(p.ht, speed);
       // var r = p.sz / 2 + p.radius
       if (!p.angle_off) {
         var r = p.sz * Math.sin((p.me + frameCount) / 100) + 30;
         var old_angle = p.angle;
-        p.angle += radians(p.rotation_speed);
+        //p.angle += radians(p.rotation_speed);
+        p.angle += radians(p.rotation_speed / rotation_slow);
         var ghost_angle = p.angle - old_angle / 2;
         if (p.angle > radians(360)) p.angle = 0;
 
@@ -89,8 +86,6 @@
     }
 
 
-
-
     function drawParticles() {
       for (var i = 0; i < particles_this_year.length; i++) {
         var p = particles_this_year[i];
@@ -100,48 +95,39 @@
       }
     }
 
+
     function nextYear() {
+
       current_year++;
 
-      last_trigger = frameCount = 0;
+      frameCount = 1;
       console.log('current_year', current_year);
       particles_this_year = getThisYearsParticles();
       for (var i = 0; i < particles_this_year.length; i++) {
         var p = particles_this_year[i];
-        //p.pos.y = Y(p.offset, speed);
+        p.pos.y = getY(p.ht, speed);
         update(p);
       }
 
     }
 
-    // have thy all rreached the reached_bottom
-    // have they rotated 360
-
 
     function haveWeReachedTheBottom() {
-      var bottom = true;
-      if (particles[0]) {
-        //console.log(particles_this_year.length);
-        for (var i = 0; i < particles_this_year.length; i++) {
-          var p = particles_this_year[i];
 
-          if (p.pos.y > h / 2 + offset_shift + p.offset - 10 && frameCount > last_trigger + 250) {
-            p.bottom = true;
-          }
-
-          if (p.bottom && !p.angle_off && (p.angle < radians(120) || p.angle > radians(350))) {
-            p.angle_off = true;
-          } else {
-
-          }
-          if (!p.angle_off) bottom = false;
-
-        }
-        if (bottom == true) return true;
-
-      }
+      //if (Math.round(degrees(getPos())) == 57) return true;
 
     }
+
+
+    function getY(ht, speed) {
+      return h / 2 + offset_shift + getPos() * ht;
+    }
+
+
+    function getPos(){
+      return Math.sin(radians(92) + frameCount / speed)
+    }
+
 
 
 
@@ -212,7 +198,7 @@
             sz: val,
             target: val,
             year: d.Year,
-            offset: 0
+            ht: 0
           });
         }
       }
@@ -235,7 +221,7 @@
       particles.forEach(p => {
         p.sz = Math.round(map(p.sz, min_value, max_value, 80, 140)) / DEVICE_SCALE;
         p.rotation_speed = 3.9 - map(p.sz, min_value, max_value, 1.4, 2.6),
-          p.offset = p.sz * 2.4;
+          p.ht = p.sz * 2.4;
       });
 
       console.log('current_year', current_year);
@@ -249,15 +235,15 @@
       var particle = {
         pos: {
           x: p.x + 50,
-          y: Y(p.offset, speed)
+          y: getY(p.ht, speed)
         },
         ghost_pos: {
           x: p.x + 50,
-          y: Y(p.offset, speed)
+          y: getY(p.ht, speed)
         },
         old_pos: {
           x: p.x + 50,
-          y: Y(p.offset, speed)
+          y: getY(p.ht, speed)
         },
         sz: p.sz,
         radius: 80 / DEVICE_SCALE,
@@ -269,7 +255,7 @@
           x: 1,
           y: 1
         },
-        offset: p.offset,
+        ht: p.ht,
         target: p.target,
         angle: radians(random(360)),
         //angle2: random(360),
@@ -291,12 +277,14 @@
     // UTILS ////////////////////////////
 
     function afterLoad() {
+      for (var i = 2013; i <= 2016; i++) {
+        years.push(i);
+      }
       fixData(data);
       min_max = minMaxLatLng(data);
       addParticles(data)
       getTotals(data);
-      last_trigger = 0;
-      frameCount = 0;
+      frameCount = 1;
       ctx.background(255);
     }
 
@@ -439,9 +427,7 @@
       });
     }
 
-    function Y(offset, speed) {
-      return h / 2 + offset_shift + Math.sin(radians(90) + frameCount / speed) * (offset);
-    }
+
   </script>
 
 </body>
