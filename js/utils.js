@@ -18,8 +18,11 @@ function setScreen() {
       my_sticky = 100;
     } else if (screen_name == "wtc") {
       // 768x384
-      resize(768, 384);
-      my_sticky = 100;
+      resizeCanvas(ctx3, 768, 384);
+      resizeCanvas(ctx, 768, 384);
+      resizeCanvas(ctx2, 768, 384);
+      //resize(768, 384);
+      my_sticky = 50;
     } else {
       location.hash = "#default";
       my_sticky = 50;
@@ -112,7 +115,7 @@ function afterLoad() {
   min_max = minMaxLatLng(data);
   addParticles(data)
   getTotals(data);
-
+  //nextYear();
   last_trigger = frameCount = 0;
 }
 

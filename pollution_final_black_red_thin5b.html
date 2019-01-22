@@ -47,6 +47,9 @@
   var ctx2 = createCanvas("canvas2");
   var url = '../../data/ams_pm2.5_1_year_day_max.csv';
 
+
+
+
     var particles = [];
     var totals = [];
     var particles_this_year = [];
@@ -60,9 +63,7 @@
     let last_trigger = frameCount;
 
 
-
-
-    let current_year = 2014;
+    let current_year = 2013;
 
     var years = [];
 
@@ -72,6 +73,7 @@
       ctx3.background(255);
       ctx3.background(240);
       load(url);
+      ctx2.font = "16px Helvetica";
     };
 
 
@@ -85,8 +87,12 @@
       //ctx.background(0, 0.018)
       drawParticles();
       haveIReachedTheBottom();
-      //if (particles_this_year[0]) console.log(Math.round(degrees(getAngle(particles_this_year[0].speed))));
-      //if (particles_this_year[0]) console.log(Math.round(degrees((particles_this_year[0].angle))));
+
+      ctx2.fillMe(255);
+      // ctx2.fillText(p.target, p.pos.x + 6, h - 10);
+
+      ctx2.fillText("Netherlands PM2.5 measurements: " + current_year, 20, h - 20);
+
     }
 
     function drawParticles() {
@@ -101,8 +107,9 @@
 
     function update(p) {
 
-      var deg = Math.round(degrees(getAngle(p.speed)));
-      if (deg >= 55 && frameCount > 100) {
+      //var deg = Math.round(degrees(getAngle(p.speed)));
+      // if (deg >= 55 && frameCount > 100) {
+      if (p.pos.y > h + offset_shift/2 && frameCount > 100) {
         p.on = false;
         //frameCount = 0;
       }
@@ -114,7 +121,7 @@
     }
 
     function calcRotation(p) {
-      if (p.on == false && degrees(p.angle) < 200) {
+      if (!p.on && degrees(p.angle) <= 180) {
         p.angle += p.rotation_speed / rotation_slow;
         //console.log(degrees(p.angle));
       } else if (p.on) {
@@ -129,18 +136,17 @@
     }
 
     function calcOrbits(p) {
-      //var r = p.sz / 2 + p.radius;
-      //r = 100;
 
       if (p.on) {
         p.r = Math.sin((frameCount + p.sz * 2) / speed) * p.radius * 1.2;
-      } else if (p.r > 5){
-        p.r -=5;
       }
+      // else if (p.r > 1){
+      //   p.r -=1;
+      // }
 
       p.orbit.x = p.pos.x + Math.cos(p.angle) * p.r;
       p.orbit.y = p.pos.y + Math.sin(p.angle) * p.r;
-      //}
+
     }
 
 
@@ -149,11 +155,8 @@
       if (particles_this_year[0] && !particles_this_year[0].on) {
         for (var i = 0; i < particles_this_year.length; i++) {
           var p = particles_this_year[i];
-          // if (p.on == false && degrees(p.angle) < 180) on_count++;
-          if (p.on == false && (degrees(p.angle) >= 200 || degrees(p.angle) < 60)) on_count++;
-          //console.log(particles_this_year.length, on_count);
+          if (!p.on && degrees(p.angle) > 90) on_count++;
         }
-        //
         if (on_count == particles_this_year.length) nextYear();
       }
 
@@ -161,6 +164,9 @@
 
 
     function nextYear() {
+      for (var i = 0; i < particles_this_year.length; i++) {
+        log(Math.round(degrees(particles_this_year[i].angle)));
+      }
       old_particles = particles_this_year;
       current_year++;
       totalFrames += frameCount;
@@ -171,7 +177,7 @@
       for (var i = 0; i < particles_this_year.length; i++) {
         var p = particles_this_year[i];
         p.on = true;
-        
+
         //update(p);
       }
       //console.log('particles_this_year', particles_this_year);
@@ -220,9 +226,7 @@
       // ctx2.fillCircle(p.orbit.x, p.orbit.y, 10, 10);
       ctx2.fillMe(255);
       ctx2.fillCircle(p.orbit.x, p.orbit.y, 5, 5);
-      ctx2.fillMe(255);
-      // ctx2.fillText(p.target, p.pos.x + 6, h - 10);
-      ctx2.fillText("Netherlands PM2.5 measurements: " + current_year, 20, h - 20);
+
       //ctx2.fillText(p.ht, p.pos.x - 20, h - 10);
       //ctx2.fillText(Math.round(degrees(p.angle)), p.pos.x - 20, h - 30);
 
@@ -312,7 +316,7 @@
         target: p.target,
         on: true,
         old_angle: 350,
-        angle: radians(random(40, 170)),
+        angle: radians(random(90)),
         rotation_speed: 1,
         speed: speed,
         dir: -1,

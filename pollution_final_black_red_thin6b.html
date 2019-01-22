@@ -11,6 +11,7 @@
   <script language="javascript" src="js/utils.js"></script>
 
   <script language="javascript" src="js/d3.js"></script>
+  <script language="javascript" src="js/Tween.min.js"></script>
   <script language="javascript" src="js/jquery-1.10.1.min.js"></script>
 
   <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
@@ -37,6 +38,7 @@
 
   var speed = 78;
   var totalFrames = 0;
+  var total_on = 0;
 
   var rotation_slow = 5 * DEVICE_SCALE;
   var offset_shift = 100 / DEVICE_SCALE;
@@ -46,6 +48,11 @@
   var ctx = createCanvas("canvas1");
   var ctx2 = createCanvas("canvas2");
   var url = '../../data/ams_pm2.5_1_year_day_max.csv';
+
+  
+
+  var rotations = [];
+  var moves = [];
 
     var particles = [];
     var totals = [];
@@ -59,7 +66,7 @@
 
     let last_trigger = frameCount;
 
-
+    var tween_time = 9000;
 
 
     let current_year = 2014;
@@ -76,7 +83,7 @@
 
 
     function draw() {
-
+      TWEEN.update();
       //if (frameCount % 10 == 0) ctx3.background(0, 0.018);
       var bg = Math.round((totalFrames + frameCount) / 7);
       if (bg > 255) bg = 255;
@@ -84,7 +91,8 @@
       ctx2.clear();
       //ctx.background(0, 0.018)
       drawParticles();
-      haveIReachedTheBottom();
+      //haveIReachedTheBottom();
+
       //if (particles_this_year[0]) console.log(Math.round(degrees(getAngle(particles_this_year[0].speed))));
       //if (particles_this_year[0]) console.log(Math.round(degrees((particles_this_year[0].angle))));
     }
@@ -101,83 +109,70 @@
 
     function update(p) {
 
-      var deg = Math.round(degrees(getAngle(p.speed)));
-      if (deg >= 55 && frameCount > 100) {
-        p.on = false;
-        //frameCount = 0;
-      }
-
-      calcRotation(p);
-      calCPos(p);
       calcOrbits(p);
 
     }
 
-    function calcRotation(p) {
-      if (p.on == false && degrees(p.angle) < 200) {
-        p.angle += p.rotation_speed / rotation_slow;
-        //console.log(degrees(p.angle));
-      } else if (p.on) {
-        p.angle += p.rotation_speed / rotation_slow;
-      }
-
-    }
-
-    function calCPos(p) {
-      p.old_pos.y = p.pos.y;
-      p.pos.y = getY(p.ht, p.speed);
-    }
-
     function calcOrbits(p) {
-      //var r = p.sz / 2 + p.radius;
-      //r = 100;
 
-      if (p.on) {
-        p.r = Math.sin((frameCount + p.sz * 2) / speed) * p.radius * 1.2;
-      } else if (p.r > 5){
-        p.r -=5;
-      }
+      p.r = Math.sin((frameCount + p.sz * 2) / speed) * p.radius * 1.2;
 
       p.orbit.x = p.pos.x + Math.cos(p.angle) * p.r;
       p.orbit.y = p.pos.y + Math.sin(p.angle) * p.r;
-      //}
-    }
-
-
-    function haveIReachedTheBottom() {
-      var on_count = 0;
-      if (particles_this_year[0] && !particles_this_year[0].on) {
-        for (var i = 0; i < particles_this_year.length; i++) {
-          var p = particles_this_year[i];
-          // if (p.on == false && degrees(p.angle) < 180) on_count++;
-          if (p.on == false && (degrees(p.angle) >= 200 || degrees(p.angle) < 60)) on_count++;
-          //console.log(particles_this_year.length, on_count);
-        }
-        //
-        if (on_count == particles_this_year.length) nextYear();
-      }
 
     }
 
 
     function nextYear() {
+      total_on = 0;
       old_particles = particles_this_year;
       current_year++;
       totalFrames += frameCount;
       frameCount = 0;
       console.log('current_year', current_year);
       particles_this_year = getThisYearsParticles();
-      console.log("-- " + particles_this_year.length);
+      //console.log("-- " + particles_this_year.length);
+      rotations = [];
+
       for (var i = 0; i < particles_this_year.length; i++) {
         var p = particles_this_year[i];
         p.on = true;
-        
-        //update(p);
+        addTweens(p)
       }
       //console.log('particles_this_year', particles_this_year);
     }
 
 
+    function addTweens(p){
+
+      var num_rotations = Math.round(p.sz/30);
+      //var num_rotations = 5;
+      console.log(num_rotations);
+
+      new TWEEN.Tween({val: h})
+        .to({val: [h - p.ht, h + 150]}, tween_time)
+          .onUpdate(function() {
+              p.pos.y = this.val;
+              p.ghost_pos.y = p.pos.y - (p.pos.y - p.old_pos.y)/2;
+              p.old_pos.y = p.pos.y;
+      })
+      .easing(TWEEN.Easing.Quadratic.InOut)
+      .onComplete(function() {
+        total_on ++;
+        p.pos.y =  h + 150;
+        if (total_on == particles_this_year.length) {
+          //TWEEN.removeAll
+          nextYear();
+        }
+
+      }).start();
+
+      new TWEEN.Tween({val: 0})
+          .to({val: radians(num_rotations * 360)}, tween_time)
+            .onUpdate(function() {
+                p.angle = radians(120) + this.val;
+        }).start();
+    }
 
     // DRAWING ////////////////////////////
 
@@ -187,7 +182,7 @@
       // ctx.fillMe('#0095a8');
       ctx.fillMe('#ee0000');
       //ctx.fillMe(0);
-      ctx.fillEllipse(p.ghost_pos.x, p.ghost_pos.y, 8, 8);
+      //ctx.fillEllipse(p.ghost_pos.x, p.ghost_pos.y, 8, 8);
       ctx.fillEllipse(p.pos.x, p.pos.y, 8, 8);
 
     }
@@ -275,7 +270,7 @@
       }));
 
       particles.forEach(p => {
-        p.ht = Math.round(map(p.sz, min_value, max_value, h * 0.15, h * 0.5));
+        p.ht = Math.round(map(p.sz, min_value, max_value, h * 0.25, h * 0.7));
         p.sz = Math.round(map(p.sz, min_value, max_value, min_sz, max_sz)) / DEVICE_SCALE;
         p.rotation_speed = 1.2 - map(p.sz, min_value, max_value, 0.9, 1.1);
       });
