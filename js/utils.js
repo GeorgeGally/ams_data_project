@@ -10,12 +10,18 @@ function setScreen() {
       resizeCanvas(ctx, 2112, 608);
       resizeCanvas(ctx2, 2112, 608);
       my_sticky = 60;
+      font = "16px Helvetica";
+      min_ht = 0.18;
+      max_ht = 0.5;
     } else if (screen_name == "leidseplein") {
       // 1632x608
       resizeCanvas(ctx3, 1632, 608);
       resizeCanvas(ctx, 1632, 608);
       resizeCanvas(ctx2, 1632, 608);
       my_sticky = 100;
+      font = "13px Helvetica";
+      min_ht = 0.18;
+      max_ht = 0.47;
     } else if (screen_name == "wtc") {
       // 768x384
       resizeCanvas(ctx3, 768, 384);
@@ -23,6 +29,10 @@ function setScreen() {
       resizeCanvas(ctx2, 768, 384);
       //resize(768, 384);
       my_sticky = 50;
+      font = "11px Helvetica";
+      txt_pos = {x: 20, y: h-20};
+      min_ht = 0.18;
+      max_ht = 0.47;
     } else {
       location.hash = "#default";
       my_sticky = 50;

@@ -30,13 +30,16 @@
 
   var min_sz = 80;
   var max_sz = 150;
-
+  var min_ht = 0.18;
+  var max_ht = 0.5;
+  var txt_pos = {x: 40, y: h-30}
   var DEVICE_SCALE = 1.2;
 
   frameRate = 120;
 
   var speed = 78;
   var totalFrames = 0;
+  var font = "16px Helvetica";
 
   var rotation_slow = 5 * DEVICE_SCALE;
   var offset_shift = 100 / DEVICE_SCALE;
@@ -80,7 +83,7 @@ function doSomething() {
       ctx3.background(255);
       ctx3.background(240);
       load(url);
-      ctx2.font = "16px Helvetica";
+      ctx2.font = font;
     };
 
 
@@ -97,7 +100,7 @@ function doSomething() {
 
       ctx2.fillMe(255);
 
-      if (current_year <= 2016) ctx2.fillText("Netherlands PM2.5 measurements: " + current_year, 40, h - 30);
+      if (current_year <= 2016) ctx2.fillText("Netherlands PM2.5 measurements: " + current_year, txt_pos.x, txt_pos.y);
       }
     }
 
@@ -282,7 +285,8 @@ function doSomething() {
       }));
 
       particles.forEach(p => {
-        p.ht = Math.round(map(p.sz, min_value, max_value, h * 0.18, h * 0.5));
+
+        p.ht = Math.round(map(p.sz, min_value, max_value, h * min_ht, h * max_ht));
         p.sz = Math.round(map(p.sz, min_value, max_value, min_sz, max_sz)) / DEVICE_SCALE;
         p.rotation_speed = 1.2 - map(p.sz, min_value, max_value, 0.9, 1.1);
       });
